@@ -1,0 +1,8 @@
+{
+  "name": "JobMate AI",
+  "description": "Your long-term career companion. Mining experiences, generating resumes, and simulating interviews.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
