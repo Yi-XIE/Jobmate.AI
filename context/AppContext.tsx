@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { StarExperience, AppMode, SavedResume } from '../types';
+import React, { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction } from 'react';
+import { StarExperience, AppMode, SavedResume, User, ChatSession, Message } from '../types';
 
 interface AppState {
   currentMode: AppMode;
@@ -10,6 +10,14 @@ interface AppState {
   setResumeText: (text: string) => void;
   savedResumes: SavedResume[];
   loadResume: (id: string) => void;
+  // User & History
+  currentUser: User;
+  users: User[];
+  switchUser: (userId: string) => void;
+  chatHistory: ChatSession[];
+  // Global Chat State
+  messages: Message[];
+  setMessages: Dispatch<SetStateAction<Message[]>>;
 }
 
 const defaultExperiences: StarExperience[] = [
@@ -77,6 +85,29 @@ const mockSavedResumes: SavedResume[] = [
   }
 ];
 
+const mockUsers: User[] = [
+  { 
+    id: 'u1', 
+    name: '陈小明', 
+    role: '应届毕业生', 
+    // Changed to a cute cartoon avatar
+    avatar: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Felix' 
+  },
+  { 
+    id: 'u2', 
+    name: 'Alex (测试号)', 
+    role: '产品经理', 
+    avatar: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Alex' 
+  },
+];
+
+const mockChatHistory: ChatSession[] = [
+  { id: 'c1', title: '挖掘校园音乐节经历', date: '今天 10:30' },
+  { id: 'c2', title: '优化自我介绍', date: '昨天' },
+  { id: 'c3', title: '面试技巧咨询：如何回答缺点', date: '3月12日' },
+  { id: 'c4', title: '周报生成：第10周', date: '3月5日' },
+];
+
 const AppContext = createContext<AppState | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -84,6 +115,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [experiences, setExperiences] = useState<StarExperience[]>(defaultExperiences);
   const [resumeText, setResumeText] = useState<string>(defaultResume);
   const [savedResumes, setSavedResumes] = useState<SavedResume[]>(mockSavedResumes);
+  
+  // User State
+  const [currentUser, setCurrentUser] = useState<User>(mockUsers[0]);
+  const [users] = useState<User[]>(mockUsers);
+  const [chatHistory] = useState<ChatSession[]>(mockChatHistory);
+  
+  // Global Chat State
+  const [messages, setMessages] = useState<Message[]>([]);
 
   const addExperience = (exp: StarExperience) => {
     setExperiences(prev => [exp, ...prev]);
@@ -97,6 +136,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  const switchUser = (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    if (user) setCurrentUser(user);
+  };
+
   return (
     <AppContext.Provider value={{ 
       currentMode, 
@@ -106,7 +150,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       resumeText,
       setResumeText,
       savedResumes,
-      loadResume
+      loadResume,
+      currentUser,
+      users,
+      switchUser,
+      chatHistory,
+      messages,
+      setMessages
     }}>
       {children}
     </AppContext.Provider>

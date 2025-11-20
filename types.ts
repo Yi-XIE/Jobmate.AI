@@ -25,6 +25,12 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+export interface Message {
+  id: string;
+  role: 'user' | 'model';
+  text: string;
+}
+
 export interface MatchResult {
   score: number;
   missingKeywords: string[];
@@ -39,4 +45,17 @@ export interface SavedResume {
   date: string;
   preview: string;
   content: string;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  avatar: string;
+  role: string; // e.g. '学生', '求职者'
+}
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  date: string;
 }

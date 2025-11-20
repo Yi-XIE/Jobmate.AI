@@ -6,7 +6,8 @@ import ModuleInterview from './components/ModuleInterview';
 import ModuleCopilot from './components/ModuleCopilot';
 import ModuleAssets from './components/ModuleAssets';
 import ModuleResumeList from './components/ModuleResumeList';
-import { AppMode } from './types';
+import UserMenu from './components/UserMenu'; 
+import { AppMode, Message } from './types';
 import { ChevronLeft, Sparkles, ClipboardCheck, Target, Plus, Send, Bot, Save, FileText, Video, Database, Hexagon } from 'lucide-react';
 import { createMiningChat } from './services/geminiService';
 import { Chat } from '@google/genai';
@@ -27,15 +28,9 @@ const JobMateAvatar: React.FC<{ size?: 'sm' | 'lg' }> = ({ size = 'sm' }) => {
 };
 
 // --- Dashboard Chat Component ---
-interface Message {
-  id: string;
-  role: 'user' | 'model';
-  text: string;
-}
 
 const DashboardChat: React.FC = () => {
-  const { addExperience, setMode } = useApp();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const { addExperience, setMode, messages, setMessages } = useApp(); // Use global messages
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const chatSessionRef = useRef<Chat | null>(null);
@@ -58,7 +53,7 @@ const DashboardChat: React.FC = () => {
     if (!textToSend.trim() || !chatSessionRef.current) return;
 
     const userMsg: Message = { id: Date.now().toString(), role: 'user', text: textToSend };
-    setMessages(prev => [...prev, userMsg]);
+    setMessages([...messages, userMsg]);
     setInputValue('');
     setIsTyping(true);
 
@@ -81,21 +76,6 @@ const DashboardChat: React.FC = () => {
     alert("打开文件选择器... (支持 PDF, Word, 图片)");
   };
 
-  const handleSaveAsset = () => {
-      const newExp = {
-        id: Date.now().toString(),
-        title: 'AI 对话挖掘经历',
-        date: new Date().toISOString().slice(0, 7),
-        situation: '通过首页 AI 对话挖掘',
-        task: '从对话中提取',
-        action: 'AI 自动记录',
-        result: '待量化',
-        tags: ['沟通能力', '待审核']
-      };
-      addExperience(newExp);
-      alert("经历已保存到经历库！");
-  };
-
   // Updated to horizontal pill style configuration
   const quickActions = [
     { label: '简历生成', icon: FileText, mode: AppMode.RESUME, color: 'text-blue-600' },
@@ -104,23 +84,26 @@ const DashboardChat: React.FC = () => {
     { label: '匹配检测', icon: Target, mode: AppMode.MATCH, color: 'text-orange-600' },
   ];
 
+  const isChatting = messages.length > 0;
+
   return (
-    <div className="flex flex-col h-full relative bg-slate-50">
+    <div className="flex flex-col h-full relative bg-slate-50 overflow-hidden">
       
       {/* Chat Area */}
-      {/* Added pt-20 to prevent content from hiding behind the absolute header */}
-      <div className="flex-1 overflow-y-auto p-4 pt-20 space-y-6 relative z-0">
+      {/* Logic: If chatting, allow scroll. If empty state, use flex center and NO scroll to prevent bouncing. */}
+      <div className={`flex-1 space-y-6 relative z-0 overscroll-none ${isChatting ? 'overflow-y-auto p-4 pt-20 no-scrollbar' : 'overflow-hidden flex flex-col justify-center items-center pb-20 px-6'}`}>
         
         {/* Empty State / Greeting Background */}
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center min-h-[75%] animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="mb-6 relative group">
+        {!isChatting && (
+          <div className="w-full flex flex-col items-center animate-in fade-in duration-700">
+            {/* Increased mt to push it down further */}
+            <div className="mb-8 relative group mt-32">
                {/* Outer Glow */}
                <div className="absolute inset-0 bg-indigo-400/30 blur-3xl rounded-full scale-150 opacity-60"></div>
                <JobMateAvatar size="lg" />
             </div>
             
-            <div className="text-center space-y-2 mb-10">
+            <div className="text-center space-y-3 mb-12">
               <h2 className="text-2xl font-bold text-slate-800 tracking-tight">
                 下午好，我是职伴
               </h2>
@@ -129,20 +112,20 @@ const DashboardChat: React.FC = () => {
             
             {/* Conversation Starters (3 Options, Auto-Send) */}
             <div className="w-full max-w-[280px] space-y-3">
-               <button onClick={() => handleSendMessage("挖掘一下我最近的项目经历亮点")} className="w-full px-4 py-3.5 bg-white rounded-2xl text-left text-slate-600 text-xs hover:bg-slate-50 hover:shadow-md transition-all border border-slate-100 shadow-sm flex items-center gap-3 group">
+               <button onClick={() => handleSendMessage("挖掘一下我最近的项目经历亮点")} className="w-full px-4 py-3.5 bg-white rounded-2xl text-left text-slate-600 text-sm hover:bg-slate-50 hover:shadow-md transition-all border border-slate-100 shadow-sm flex items-center gap-3 group">
                  <span className="text-lg group-hover:scale-110 transition-transform">🚀</span> 挖掘项目经历亮点
                </button>
-               <button onClick={() => handleSendMessage("面试遇到不懂的问题该怎么回答？")} className="w-full px-4 py-3.5 bg-white rounded-2xl text-left text-slate-600 text-xs hover:bg-slate-50 hover:shadow-md transition-all border border-slate-100 shadow-sm flex items-center gap-3 group">
+               <button onClick={() => handleSendMessage("面试遇到不懂的问题该怎么回答？")} className="w-full px-4 py-3.5 bg-white rounded-2xl text-left text-slate-600 text-sm hover:bg-slate-50 hover:shadow-md transition-all border border-slate-100 shadow-sm flex items-center gap-3 group">
                  <span className="text-lg group-hover:scale-110 transition-transform">😰</span> 面试遇到难题怎么救场？
                </button>
-               <button onClick={() => handleSendMessage("帮我优化一下我的自我介绍")} className="w-full px-4 py-3.5 bg-white rounded-2xl text-left text-slate-600 text-xs hover:bg-slate-50 hover:shadow-md transition-all border border-slate-100 shadow-sm flex items-center gap-3 group">
+               <button onClick={() => handleSendMessage("帮我优化一下我的自我介绍")} className="w-full px-4 py-3.5 bg-white rounded-2xl text-left text-slate-600 text-sm hover:bg-slate-50 hover:shadow-md transition-all border border-slate-100 shadow-sm flex items-center gap-3 group">
                  <span className="text-lg group-hover:scale-110 transition-transform">✨</span> 帮我优化自我介绍
                </button>
             </div>
           </div>
         )}
 
-        {/* Message List */}
+        {/* Message List (Only rendered when chatting) */}
         {messages.map((msg) => (
           <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
              <div className={`flex gap-3 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -157,13 +140,6 @@ const DashboardChat: React.FC = () => {
                   : 'bg-white text-slate-700 border border-slate-100 rounded-tl-sm'
               }`}>
                 {msg.text}
-                {msg.role === 'model' && messages.length > 0 && (
-                  <div className="mt-3 pt-2 border-t border-slate-100 flex justify-end">
-                    <button onClick={handleSaveAsset} className="flex items-center gap-1.5 text-xs text-indigo-600 font-medium hover:bg-indigo-50 transition-colors px-2 py-1 rounded-md">
-                      <Save className="w-3 h-3" /> 存为经历
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -185,14 +161,14 @@ const DashboardChat: React.FC = () => {
              </div>
           </div>
         )}
-        <div ref={bottomRef} className="h-24" /> {/* Extra space for bottom controls */}
+        <div ref={bottomRef} className={isChatting ? "h-24" : "h-0"} /> {/* Extra space only when scrolling */}
       </div>
 
       {/* Bottom Controls Area */}
       <div className="bg-slate-50 safe-pb relative z-20 pt-2">
         
         {/* Quick Action Buttons (Horizontal Pills Scrollable) */}
-        <div className="px-4 mb-3 overflow-x-auto no-scrollbar flex gap-3 pb-1">
+        <div className="px-4 mb-3 overflow-x-auto no-scrollbar flex gap-3 pb-1 overscroll-x-contain">
           {quickActions.map((action) => (
             <button
               key={action.label}
@@ -277,13 +253,19 @@ const MainContent: React.FC = () => {
   );
 };
 
-const MobileHeader: React.FC = () => {
-  const { currentMode, setMode } = useApp();
+const MobileHeader: React.FC<{ onAvatarClick: () => void }> = ({ onAvatarClick }) => {
+  const { currentMode, setMode, currentUser, messages, setMessages } = useApp(); // Access messages
 
   // Navigation Logic Configuration
   const getHeaderConfig = () => {
     switch(currentMode) {
-      case AppMode.DASHBOARD: return { title: "", showBack: false, transparent: true };
+      case AppMode.DASHBOARD: 
+        // If there are messages, show "Back" to clear them (return to home state)
+        if (messages.length > 0) {
+            return { title: "对话", showBack: true, customBack: () => setMessages([]) };
+        }
+        return { title: "", showBack: false, transparent: true };
+        
       case AppMode.RESUME: return { title: "简历定制", showBack: true, backTo: AppMode.DASHBOARD };
       case AppMode.RESUME_LIST: return { title: "我的简历", showBack: true, backTo: AppMode.DASHBOARD };
       case AppMode.MATCH: return { title: "人岗匹配", showBack: true, backTo: AppMode.DASHBOARD };
@@ -296,6 +278,14 @@ const MobileHeader: React.FC = () => {
 
   const config = getHeaderConfig();
 
+  const handleBack = () => {
+      if (config.customBack) {
+          config.customBack();
+      } else if (config.backTo) {
+          setMode(config.backTo);
+      }
+  };
+
   return (
     <div className={`h-14 px-4 flex items-center justify-between flex-shrink-0 z-30 absolute top-0 left-0 right-0 transition-colors ${
       config.transparent ? 'bg-slate-50/90 backdrop-blur-md text-slate-900' : 'bg-white text-slate-900 border-b border-slate-100 shadow-sm sticky'
@@ -303,16 +293,20 @@ const MobileHeader: React.FC = () => {
       <div className="flex items-center gap-2">
         {config.showBack ? (
           <button 
-            onClick={() => config.backTo && setMode(config.backTo)}
+            onClick={handleBack}
             className="p-1.5 -ml-2 mr-1 rounded-full active:scale-90 transition-transform hover:bg-slate-100 text-slate-600"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
         ) : (
-           // User Avatar on Left for Dashboard
-           <div className="w-9 h-9 rounded-full bg-indigo-100 overflow-hidden border-2 border-white shadow-sm">
-              <img src="https://avatar.iran.liara.run/public/job/student/male" alt="User" className="w-full h-full object-cover bg-white" />
-           </div>
+           // User Avatar on Left for Dashboard (Click to open Menu)
+           // Added ring-2 ring-slate-100 to match right side buttons style
+           <button 
+             onClick={onAvatarClick}
+             className="w-9 h-9 rounded-full bg-indigo-100 overflow-hidden border-2 border-white ring-2 ring-slate-100 shadow-sm active:scale-95 transition-transform"
+           >
+              <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover bg-white" />
+           </button>
         )}
         {config.showBack && <span className="font-bold text-lg tracking-tight">{config.title}</span>}
       </div>
@@ -320,20 +314,22 @@ const MobileHeader: React.FC = () => {
       {/* Right Side Actions */}
       <div className="flex items-center gap-2">
         
-        {/* My Resume Button (List View) */}
+        {/* My Resume Button (List View) - Added Title Tooltip */}
         <button 
           onClick={() => setMode(AppMode.RESUME_LIST)}
           className="p-2 rounded-lg transition-colors hover:bg-slate-100 text-slate-500"
           aria-label="My Resume"
+          title="我的简历"
         >
           <FileText className="w-6 h-6" />
         </button>
 
-        {/* Experience Button (Previously Assets) */}
+        {/* Experience Button (Previously Assets) - Added Title Tooltip */}
         <button 
           onClick={() => setMode(AppMode.ASSETS)}
           className="p-2 rounded-lg transition-colors hover:bg-slate-100 text-slate-500"
           aria-label="My Experience"
+          title="我的经历"
         >
           <Database className="w-6 h-6" />
         </button>
@@ -343,11 +339,14 @@ const MobileHeader: React.FC = () => {
 }
 
 const App: React.FC = () => {
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
   return (
     <AppProvider>
-      <div className="flex flex-col h-full w-full bg-slate-50 font-sans text-slate-900 overflow-hidden">
-        <MobileHeader />
+      <div className="flex flex-col h-full w-full bg-slate-50 font-sans text-slate-900 overflow-hidden relative">
+        <MobileHeader onAvatarClick={() => setUserMenuOpen(true)} />
         <MainContent />
+        <UserMenu isOpen={userMenuOpen} onClose={() => setUserMenuOpen(false)} />
       </div>
     </AppProvider>
   );

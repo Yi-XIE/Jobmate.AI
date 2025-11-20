@@ -20,24 +20,48 @@
             }
           },
         },
+        plugins: [
+          function({ addUtilities }) {
+            addUtilities({
+              '.no-scrollbar': {
+                '-ms-overflow-style': 'none',
+                'scrollbar-width': 'none',
+                '&::-webkit-scrollbar': {
+                  display: 'none',
+                },
+              },
+            })
+          }
+        ],
       }
     </script>
     <style>
-      /* Custom scrollbar for cleaner UI */
+      /* Hide scrollbar for Chrome, Safari and Opera */
       ::-webkit-scrollbar {
-        width: 4px;
-        height: 4px;
-      }
-      ::-webkit-scrollbar-track {
+        display: none;
+        width: 0px;
         background: transparent;
       }
-      ::-webkit-scrollbar-thumb {
-        background: #CBD5E1;
-        border-radius: 2px;
+      
+      /* Hide scrollbar for IE, Edge and Firefox */
+      * {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
       }
-      /* Prevent pull-to-refresh on mobile to feel like an app */
-      body {
+
+      /* Prevent pull-to-refresh and elastic scrolling on mobile to feel like an app */
+      html, body {
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
         overscroll-behavior-y: none;
+        position: fixed; /* Locks the body in place */
+      }
+      
+      #root {
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
       }
     </style>
   <script type="importmap">
@@ -53,7 +77,7 @@
 }
 </script>
 </head>
-  <body class="bg-background text-slate-800 antialiased h-screen w-screen overflow-hidden selection:bg-primary/20">
-    <div id="root" class="h-full w-full"></div>
+  <body class="bg-background text-slate-800 antialiased selection:bg-primary/20 touch-none">
+    <div id="root"></div>
   </body>
 </html>
