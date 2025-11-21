@@ -461,7 +461,7 @@ const MobileHeader: React.FC<{ onAvatarClick: () => void }> = ({ onAvatarClick }
       case AppMode.MATCH: return { title: "人岗匹配", showBack: true, backTo: AppMode.DASHBOARD };
       case AppMode.INTERVIEW: return { title: "面试模拟", showBack: true, backTo: AppMode.DASHBOARD };
       case AppMode.RADAR: return { title: "能力雷达", showBack: true, backTo: AppMode.DASHBOARD }; // Updated title
-      case AppMode.ASSETS: return { title: "我的经历", showBack: true, backTo: AppMode.DASHBOARD };
+      case AppMode.ASSETS: return { title: "我的旅途", showBack: true, backTo: AppMode.DASHBOARD };
       default: return { title: "JobMate", showBack: false };
     }
   }
