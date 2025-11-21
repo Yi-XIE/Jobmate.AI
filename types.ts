@@ -1,10 +1,11 @@
+
 export enum AppMode {
   DASHBOARD = 'DASHBOARD',
   RESUME = 'RESUME',
   RESUME_LIST = 'RESUME_LIST',
   MATCH = 'MATCH',
   INTERVIEW = 'INTERVIEW',
-  COPILOT = 'COPILOT',
+  RADAR = 'RADAR',
   ASSETS = 'ASSETS',
 }
 
@@ -58,4 +59,14 @@ export interface ChatSession {
   id: string;
   title: string;
   date: string;
+}
+
+export interface InterviewFeedback {
+  id: string;
+  date: string;
+  type: 'behavioral' | 'technical' | 'pressure';
+  score: number; // 0-100
+  summary: string;
+  strengths: string[];
+  improvements: string[];
 }

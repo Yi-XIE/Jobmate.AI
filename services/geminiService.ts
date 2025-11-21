@@ -17,17 +17,48 @@ export const createMiningChat = (currentHistory: {role: string, parts: {text: st
     model: models.flash,
     config: {
       systemInstruction: `你是 "职伴 (JobMate)"，一个富有同理心且专业的职业生涯规划师。
-      你的目标是使用 STAR 法则（情境 Situation、任务 Task、行动 Action、结果 Result）帮助学生挖掘过去的经历，将其转化为简历素材。
+      你的目标是帮助学生挖掘过去的经历。
       
-      1. 针对他们最近的项目、社团活动或遇到的困难提出探索性问题。
-      2. 当描述模糊时，追问“具体的障碍是什么？”或“你具体采取了什么行动？”。
-      3. 既要给予鼓励（提供情绪价值），又要理性分析。
-      4. 保持回复简洁，像朋友聊天一样自然。
-      5. 请始终使用中文回复。
+      **核心原则（必须遵守）：**
+      1. **像真人一样聊天**：回复要口语化、自然、简短。不要像机器人一样列一堆点。
+      2. **极简主义**：除非用户明确要求详细解释，否则每次回复**严格控制在 50 字以内**。
+      3. **单点突破**：一次只问一个问题，不要连珠炮似的发问。
+      4. **情绪共鸣**：先肯定用户的情绪，再进行引导。
+      5. **始终使用中文**。
+      
+      示例风格：
+      用户："我最近搞了个音乐节，但预算被砍了。"
+      你："天哪，预算被砍真的很头疼！那你当时是怎么应对这个突发状况的？" 
+      (而不是："收到。这是一个体现危机管理能力的好机会。请问你采取了什么行动？1... 2... 3...")
       `,
     },
     history: currentHistory,
   });
+};
+
+/**
+ * Generates a short title for the chat based on the first message
+ */
+export const generateChatTitle = async (firstMessage: string): Promise<string> => {
+  const prompt = `
+    请根据以下用户输入，生成一个极简短的对话标题（摘要）。
+    要求：
+    1. 不超过 8 个中文字符。
+    2. 不要包含标点符号。
+    3. 只要返回标题文本本身。
+    
+    用户输入: "${firstMessage}"
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: models.flash,
+      contents: prompt,
+    });
+    return response.text?.trim() || "新对话";
+  } catch (error) {
+    return "新对话";
+  }
 };
 
 /**

@@ -3,14 +3,15 @@ import { useApp } from '../context/AppContext';
 import { analyzeJobMatch } from '../services/geminiService';
 import { MatchResult, AppMode } from '../types';
 import { RadialBarChart, RadialBar, ResponsiveContainer } from 'recharts';
-import { Target, AlertTriangle, CheckCircle2, Sparkles, Loader2, ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
+import { Target, AlertTriangle, CheckCircle2, Sparkles, Loader2, ArrowLeft, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 
 const ModuleMatch: React.FC = () => {
-  const { resumeText, setMode } = useApp();
+  const { resumeText, setResumeText, savedResumes } = useApp();
   const [jdText, setJdText] = useState('');
   const [result, setResult] = useState<MatchResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [showResumePreview, setShowResumePreview] = useState(false);
+  const [selectedResumeId, setSelectedResumeId] = useState<string>('current');
 
   const handleAnalyze = async () => {
     if (!jdText.trim()) return;
@@ -28,15 +29,49 @@ const ModuleMatch: React.FC = () => {
     }
   };
 
+  const handleResumeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const id = e.target.value;
+    setSelectedResumeId(id);
+    if (id === 'current') {
+        // Keep current text (or you might want to clear/reset if tracking current draft separately)
+    } else {
+        const selected = savedResumes.find(r => r.id === id);
+        if (selected) {
+            setResumeText(selected.content);
+        }
+    }
+  };
+
   const chartData = result ? [
     { name: 'Match Score', uv: result.score, fill: result.score > 75 ? '#10B981' : result.score > 50 ? '#F59E0B' : '#EF4444' }
   ] : [];
 
   return (
     <div className="h-full flex flex-col bg-slate-50 overflow-y-auto relative">
-      {/* Header handled by App.tsx, but we add a sub-header for context if needed or just rely on main content */}
       
       <div className="p-4 space-y-4 pb-20">
+        
+        {/* Resume Selection */}
+        <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-100">
+             <label className="block text-xs font-bold text-slate-500 mb-2 uppercase">选择用于匹配的简历</label>
+             <div className="relative">
+                 <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                 <select 
+                    value={selectedResumeId}
+                    onChange={handleResumeChange}
+                    className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none appearance-none text-slate-700"
+                 >
+                     <option value="current">📄 当前编辑草稿</option>
+                     <optgroup label="我的简历库">
+                        {savedResumes.map(r => (
+                            <option key={r.id} value={r.id}>{r.title} ({r.date})</option>
+                        ))}
+                     </optgroup>
+                 </select>
+                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+             </div>
+        </div>
+
         {/* Resume Context Accordion */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
           <button 
@@ -45,7 +80,7 @@ const ModuleMatch: React.FC = () => {
           >
             <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
               <CheckCircle2 className="w-4 h-4 text-primary" />
-              当前简历内容 ({resumeText.length} 字)
+              当前选中简历内容 ({resumeText.length} 字)
             </div>
             {showResumePreview ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
           </button>

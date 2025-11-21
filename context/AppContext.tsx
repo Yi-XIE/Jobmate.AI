@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction } from 'react';
-import { StarExperience, AppMode, SavedResume, User, ChatSession, Message } from '../types';
+import { StarExperience, AppMode, SavedResume, User, ChatSession, Message, InterviewFeedback } from '../types';
 
 interface AppState {
   currentMode: AppMode;
@@ -10,6 +10,7 @@ interface AppState {
   setResumeText: (text: string) => void;
   savedResumes: SavedResume[];
   loadResume: (id: string) => void;
+  saveCurrentResume: () => void; // Added
   // User & History
   currentUser: User;
   users: User[];
@@ -18,6 +19,10 @@ interface AppState {
   // Global Chat State
   messages: Message[];
   setMessages: Dispatch<SetStateAction<Message[]>>;
+  currentChatTitle: string;
+  setCurrentChatTitle: Dispatch<SetStateAction<string>>;
+  // Interview Feedback
+  interviewFeedbacks: InterviewFeedback[];
 }
 
 const defaultExperiences: StarExperience[] = [
@@ -90,7 +95,7 @@ const mockUsers: User[] = [
     id: 'u1', 
     name: '陈小明', 
     role: '应届毕业生', 
-    // Changed to a cute cartoon avatar
+    // Cute cartoon avatar
     avatar: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Felix' 
   },
   { 
@@ -108,6 +113,27 @@ const mockChatHistory: ChatSession[] = [
   { id: 'c4', title: '周报生成：第10周', date: '3月5日' },
 ];
 
+const mockInterviewFeedbacks: InterviewFeedback[] = [
+  {
+    id: 'if1',
+    date: '2024-03-15',
+    type: 'behavioral',
+    score: 85,
+    summary: '在回答“最大的缺点”时，能够坦诚面对并提出改进措施，但具体的改进案例可以更生动一些。',
+    strengths: ['态度真诚', '逻辑清晰 (STAR原则)', '眼神交流自信'],
+    improvements: ['语速稍快', '缺乏数据支撑改进效果']
+  },
+  {
+    id: 'if2',
+    date: '2024-03-10',
+    type: 'pressure',
+    score: 68,
+    summary: '面对连续追问时显得有些慌张，出现了较长时间的停顿。需要加强抗压训练。',
+    strengths: ['没有情绪化', '努力维持礼貌'],
+    improvements: ['临场反应慢', '回答缺乏结构', '眼神频繁躲闪']
+  }
+];
+
 const AppContext = createContext<AppState | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -120,9 +146,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [currentUser, setCurrentUser] = useState<User>(mockUsers[0]);
   const [users] = useState<User[]>(mockUsers);
   const [chatHistory] = useState<ChatSession[]>(mockChatHistory);
+  const [interviewFeedbacks] = useState<InterviewFeedback[]>(mockInterviewFeedbacks);
   
   // Global Chat State
   const [messages, setMessages] = useState<Message[]>([]);
+  const [currentChatTitle, setCurrentChatTitle] = useState<string>("");
 
   const addExperience = (exp: StarExperience) => {
     setExperiences(prev => [exp, ...prev]);
@@ -134,6 +162,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setResumeText(resume.content);
       setMode(AppMode.RESUME);
     }
+  };
+
+  const saveCurrentResume = () => {
+    const lines = resumeText.split('\n').filter(l => l.trim());
+    const title = lines.length > 0 ? lines[0].replace(/^#\s*/, '') : '未命名简历';
+    
+    const newResume: SavedResume = {
+      id: Date.now().toString(),
+      title: title.length > 15 ? title.substring(0, 15) + '...' : title,
+      date: new Date().toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      preview: resumeText.substring(0, 50).replace(/[#*]/g, '') + '...',
+      content: resumeText
+    };
+    
+    setSavedResumes(prev => [newResume, ...prev]);
   };
 
   const switchUser = (userId: string) => {
@@ -151,12 +194,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setResumeText,
       savedResumes,
       loadResume,
+      saveCurrentResume,
       currentUser,
       users,
       switchUser,
       chatHistory,
       messages,
-      setMessages
+      setMessages,
+      interviewFeedbacks,
+      currentChatTitle,
+      setCurrentChatTitle
     }}>
       {children}
     </AppContext.Provider>

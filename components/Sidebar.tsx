@@ -17,15 +17,15 @@ const Sidebar: React.FC = () => {
       id: AppMode.DASHBOARD, 
       label: '首页', 
       icon: LayoutDashboard,
-      // Copilot is accessed from Dashboard tools
-      isActive: (mode: AppMode) => mode === AppMode.DASHBOARD || mode === AppMode.COPILOT
+      // Copilot/Radar is accessed from Dashboard tools
+      isActive: (mode: AppMode) => mode === AppMode.DASHBOARD || mode === AppMode.RADAR
     },
     { 
       id: AppMode.RESUME, 
       label: '简历', 
       icon: FileText,
-      // Match is accessed from Resume (or Dashboard shortcut, but logically under Resume)
-      isActive: (mode: AppMode) => mode === AppMode.RESUME || mode === AppMode.MATCH 
+      // Match and Resume List are accessed from Resume (or Dashboard shortcut, but logically under Resume)
+      isActive: (mode: AppMode) => mode === AppMode.RESUME || mode === AppMode.MATCH || mode === AppMode.RESUME_LIST
     },
     { 
       id: AppMode.INTERVIEW, 
