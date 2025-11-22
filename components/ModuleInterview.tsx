@@ -161,7 +161,7 @@ const ModuleInterview: React.FC = () => {
                </button>
              </div>
            ) : (
-             <div className="w-full h-full flex flex-col items-center pt-32 px-6 relative z-10">
+             <div className="w-full h-full flex flex-col items-center pt-40 px-6 relative z-10">
                 {/* Avatar */}
                 <div className="relative flex-shrink-0">
                     <div className={`w-32 h-32 rounded-full border-4 overflow-hidden shadow-2xl transition-all duration-500 ${
@@ -184,13 +184,13 @@ const ModuleInterview: React.FC = () => {
                 </div>
 
                 {/* Latest Question Bubble - Moved Here */}
-                <div className="flex-1 w-full max-w-sm mt-10 flex flex-col items-center justify-start relative">
+                <div className="flex-1 w-full max-w-sm mt-4 flex flex-col items-center justify-start relative">
                   {lastInterviewerMessage ? (
                     <div className="bg-white/90 backdrop-blur-md p-6 rounded-2xl border border-indigo-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full relative animate-in fade-in slide-in-from-bottom-4 group">
                          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-100 text-indigo-600 px-3 py-0.5 text-[10px] rounded-full font-bold uppercase tracking-wide border border-white shadow-sm">
                               提问
                          </div>
-                         <p className="text-slate-700 text-center text-base font-medium leading-relaxed mt-2">
+                         <p className="text-slate-700 text-left text-base font-medium leading-relaxed mt-2">
                               "{lastInterviewerMessage.content}"
                          </p>
                          
