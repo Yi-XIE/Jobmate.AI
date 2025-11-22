@@ -225,33 +225,33 @@ const DashboardChat: React.FC = () => {
     <div className="flex flex-col h-full relative bg-slate-50 overflow-hidden">
       
       {/* Chat Area */}
-      <div className={`flex-1 space-y-6 relative z-0 overscroll-none ${isChatting ? 'overflow-y-auto p-4 pt-20 no-scrollbar' : 'overflow-hidden flex flex-col justify-center items-center pb-20 px-6'}`}>
+      <div className={`flex-1 space-y-6 relative z-0 overscroll-none ${isChatting ? 'overflow-y-auto p-4 pt-20 no-scrollbar' : 'overflow-hidden flex flex-col pb-0 px-6'}`}>
         
-        {/* Empty State */}
+        {/* Empty State - Aligned to bottom */}
         {!isChatting && (
-          <div className="w-full flex flex-col items-center animate-in fade-in duration-700">
-            {/* Large top margin to move content down as requested */}
-            <div className="mb-8 relative group mt-64">
+          <div className="w-full flex flex-col items-center animate-in fade-in duration-700 justify-end h-full pb-10">
+            
+            <div className="mb-6 relative group">
                <div className="absolute inset-0 bg-indigo-400/30 blur-3xl rounded-full scale-150 opacity-60"></div>
                <JobMateAvatar size="lg" />
             </div>
             
-            <div className="text-center space-y-3 mb-12">
+            <div className="text-center space-y-2 mb-8">
               <h2 className="text-2xl font-bold text-slate-800 tracking-tight">
                 {getGreeting()}，{currentUser.name}
               </h2>
               <p className="text-slate-400 text-sm font-medium">我是职伴，你的全周期职场数字分身</p>
             </div>
             
-            {/* Conversation Starters */}
-            <div className="w-full max-w-[280px] space-y-3">
-               <button onClick={() => handleSendMessage("挖掘一下我最近的项目经历亮点")} className="w-full px-4 py-3.5 bg-white rounded-2xl text-left text-slate-600 text-sm hover:bg-slate-50 hover:shadow-md transition-all border border-slate-100 shadow-sm flex items-center gap-3 group">
+            {/* Conversation Starters - Compact Layout */}
+            <div className="w-full max-w-[280px] space-y-2">
+               <button onClick={() => handleSendMessage("挖掘一下我最近的项目经历亮点")} className="w-full px-4 py-2.5 bg-white rounded-xl text-left text-slate-600 text-sm hover:bg-slate-50 hover:shadow-md transition-all border border-slate-100 shadow-sm flex items-center gap-3 group">
                  <span className="text-lg group-hover:scale-110 transition-transform">🚀</span> <span className="font-medium text-slate-700">挖掘项目经历亮点</span>
                </button>
-               <button onClick={() => handleSendMessage("面试遇到不懂的问题该怎么回答？")} className="w-full px-4 py-3.5 bg-white rounded-2xl text-left text-slate-600 text-sm hover:bg-slate-50 hover:shadow-md transition-all border border-slate-100 shadow-sm flex items-center gap-3 group">
+               <button onClick={() => handleSendMessage("面试遇到不懂的问题该怎么回答？")} className="w-full px-4 py-2.5 bg-white rounded-xl text-left text-slate-600 text-sm hover:bg-slate-50 hover:shadow-md transition-all border border-slate-100 shadow-sm flex items-center gap-3 group">
                  <span className="text-lg group-hover:scale-110 transition-transform">😰</span> <span className="font-medium text-slate-700">面试遇到难题怎么救场？</span>
                </button>
-               <button onClick={() => handleSendMessage("帮我优化一下我的自我介绍")} className="w-full px-4 py-3.5 bg-white rounded-2xl text-left text-slate-600 text-sm hover:bg-slate-50 hover:shadow-md transition-all border border-slate-100 shadow-sm flex items-center gap-3 group">
+               <button onClick={() => handleSendMessage("帮我优化一下我的自我介绍")} className="w-full px-4 py-2.5 bg-white rounded-xl text-left text-slate-600 text-sm hover:bg-slate-50 hover:shadow-md transition-all border border-slate-100 shadow-sm flex items-center gap-3 group">
                  <span className="text-lg group-hover:scale-110 transition-transform">✨</span> <span className="font-medium text-slate-700">帮我优化自我介绍</span>
                </button>
             </div>
@@ -423,7 +423,7 @@ const MainContent: React.FC = () => {
       case AppMode.RESUME_LIST: return <ModuleResumeList />;
       case AppMode.MATCH: return <ModuleMatch />;
       case AppMode.INTERVIEW: return <ModuleInterview />;
-      case AppMode.RADAR: return <ModuleRadar />; // Changed from Copilot
+      case AppMode.RADAR: return <ModuleRadar />; // Changed from ModuleCopilot
       case AppMode.ASSETS: return <ModuleAssets />;
       case AppMode.DASHBOARD: 
       default: return <DashboardChat />;

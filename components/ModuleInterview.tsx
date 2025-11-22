@@ -1,5 +1,6 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, MessageSquare, Sparkles } from 'lucide-react';
+import { Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, MessageSquare, Sparkles, X, User, Bot } from 'lucide-react';
 import { getInterviewerResponse } from '../services/geminiService';
 
 const ModuleInterview: React.FC = () => {
@@ -8,12 +9,16 @@ const ModuleInterview: React.FC = () => {
   const [micOn, setMicOn] = useState(true);
   const [transcript, setTranscript] = useState<{role: string, content: string}[]>([]);
   const [status, setStatus] = useState<'idle' | 'listening' | 'thinking' | 'speaking'>('idle');
-  const videoRef = useRef<HTMLVideoElement>(null);
   const [mode, setMode] = useState<'behavioral' | 'technical' | 'pressure'>('behavioral');
+  const [showHistory, setShowHistory] = useState(false);
 
-  const Recognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const historyEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
+  const Recognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+  // Camera handling
   useEffect(() => {
     if (cameraOn && active) {
       navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
@@ -26,6 +31,13 @@ const ModuleInterview: React.FC = () => {
     }
   }, [cameraOn, active]);
 
+  // Scroll to bottom of history when it changes or opens
+  useEffect(() => {
+    if (showHistory && historyEndRef.current) {
+      historyEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [transcript, showHistory]);
+
   const startInterview = () => {
     setActive(true);
     setStatus('speaking');
@@ -36,11 +48,13 @@ const ModuleInterview: React.FC = () => {
 
   const stopInterview = () => {
     setActive(false);
+    setShowHistory(false);
     if (recognitionRef.current) recognitionRef.current.stop();
     window.speechSynthesis.cancel();
   };
 
   const speak = (text: string) => {
+    window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'zh-CN';
     utterance.onend = () => {
@@ -69,7 +83,8 @@ const ModuleInterview: React.FC = () => {
       
       try {
         const response = await getInterviewerResponse(newTranscript, text, mode);
-        setTranscript(prev => [...prev, { role: 'interviewer', content: response }]);
+        const updatedTranscript = [...newTranscript, { role: 'interviewer', content: response }];
+        setTranscript(updatedTranscript);
         setStatus('speaking');
         speak(response);
       } catch (e) {
@@ -77,22 +92,32 @@ const ModuleInterview: React.FC = () => {
         setStatus('idle');
       }
     };
+    
+    recognition.onend = () => {
+       if (status === 'listening') {
+           // Optional: restart listening if silence? 
+           // For now, simplistic logic: if ended without result, user might need to press something or we assume silence.
+           // But to prevent loops, we won't auto-restart here indefinitely without VAD.
+       }
+    };
 
     recognition.start();
   };
 
+  const lastInterviewerMessage = [...transcript].reverse().find(t => t.role === 'interviewer');
+
   return (
     <div className="h-full flex flex-col bg-slate-50 rounded-none relative overflow-hidden">
       {/* Main Stage */}
-      <div className="flex-1 relative flex flex-col">
+      <div className="flex-1 relative flex flex-col min-h-0 bg-white">
         
         {/* AI Interviewer Area */}
-        <div className="flex-1 flex items-center justify-center bg-white relative">
+        <div className="flex-1 flex items-center justify-center relative overflow-hidden">
            {/* Background decorative elements */}
            <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-50"></div>
 
            {!active ? (
-             <div className="text-center space-y-8 px-6 max-w-sm mx-auto relative z-10">
+             <div className="text-center space-y-8 px-6 max-w-sm mx-auto relative z-10 overflow-y-auto max-h-full py-8 no-scrollbar">
                <div className="w-24 h-24 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-3xl mx-auto flex items-center justify-center shadow-xl shadow-indigo-200 transform rotate-3">
                  <VideoIcon className="w-10 h-10 text-white" />
                </div>
@@ -136,48 +161,117 @@ const ModuleInterview: React.FC = () => {
                </button>
              </div>
            ) : (
-             <div className="w-full h-full flex flex-col items-center pt-16 px-6 relative z-10">
+             <div className="w-full h-full flex flex-col items-center pt-12 px-6 relative z-10">
                 {/* Avatar */}
-                <div className="relative">
+                <div className="relative flex-shrink-0">
                     <div className={`w-32 h-32 rounded-full border-4 overflow-hidden shadow-2xl transition-all duration-500 ${
                       status === 'speaking' ? 'border-green-500 scale-110 shadow-green-200' : 'border-white'
                     }`}>
-                      <img src="https://api.dicebear.com/9.x/bottts-neutral/svg?seed=Interviewer&backgroundColor=f8fafc" className="w-full h-full object-cover bg-slate-100" alt="AI" />
+                      <img src="https://avatar.iran.liara.run/public/girl?username=Sophia" className="w-full h-full object-cover bg-slate-100" alt="AI Interviewer" />
                     </div>
                     <div className={`absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm border border-white ${
                         status === 'speaking' ? 'bg-green-500 text-white' : 
-                        status === 'listening' ? 'bg-blue-500 text-white' : 
+                        status === 'listening' ? 'bg-blue-50 text-white' : 
                         'bg-slate-800 text-white'
                     }`}>
                         {status === 'speaking' ? 'Speaking' : status === 'listening' ? 'Listening' : 'Thinking'}
                     </div>
                 </div>
                 
-                <div className="mt-8 text-center max-w-xs">
-                  <h3 className="text-lg font-bold text-slate-800 mb-1">AI 面试官</h3>
+                <div className="mt-4 text-center max-w-xs flex-shrink-0">
+                  <h3 className="text-lg font-bold text-slate-800 mb-1">AI 面试官 (Sophia)</h3>
                   <p className="text-xs text-slate-400">正在进行：{mode === 'behavioral' ? '行为面试' : mode === 'technical' ? '技术面试' : '压力面试'}</p>
                 </div>
-                
-                {/* Transcript Bubble */}
-                <div className="mt-auto mb-8 w-full max-w-sm">
-                  <div className="bg-white/80 backdrop-blur-md p-5 rounded-2xl border border-slate-100 shadow-lg shadow-slate-200/50 text-center">
-                    <p className="text-slate-700 text-sm leading-relaxed font-medium">
-                      "{transcript.length > 0 ? transcript[transcript.length - 1].content : '...'}"
-                    </p>
-                  </div>
+
+                {/* Latest Question Bubble - Moved Here */}
+                <div className="flex-1 w-full max-w-sm mt-10 flex flex-col items-center justify-start relative">
+                  {lastInterviewerMessage ? (
+                    <div className="bg-white/90 backdrop-blur-md p-6 rounded-2xl border border-indigo-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full relative animate-in fade-in slide-in-from-bottom-4 group">
+                         <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-100 text-indigo-600 px-3 py-0.5 text-[10px] rounded-full font-bold uppercase tracking-wide border border-white shadow-sm">
+                              提问
+                         </div>
+                         <p className="text-slate-700 text-center text-base font-medium leading-relaxed mt-2">
+                              "{lastInterviewerMessage.content}"
+                         </p>
+                         
+                          <button 
+                              onClick={() => setShowHistory(true)}
+                              className="mx-auto mt-4 flex items-center gap-1 text-xs text-slate-400 hover:text-indigo-500 transition-colors"
+                            >
+                              <MessageSquare className="w-3 h-3" />
+                              查看对话记录
+                          </button>
+                    </div>
+                  ) : (
+                    <div className="w-full border-2 border-dashed border-slate-200 rounded-2xl h-24 flex items-center justify-center">
+                        <div className="flex items-center gap-2 text-slate-300 text-xs">
+                           <div className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce" />
+                           等待提问...
+                        </div>
+                    </div>
+                  )}
                 </div>
              </div>
            )}
+
+            {/* Full History Overlay */}
+            {active && showHistory && (
+              <div className="absolute inset-0 z-40 bg-slate-50/95 backdrop-blur-lg flex flex-col animate-in slide-in-from-bottom-full duration-300">
+                 <div className="px-4 py-3 bg-white border-b border-slate-200 shadow-sm flex justify-between items-center flex-shrink-0">
+                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-indigo-600" />
+                      面试记录
+                    </h3>
+                    <button 
+                      onClick={() => setShowHistory(false)}
+                      className="p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                 </div>
+                 <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                    {transcript.map((msg, idx) => (
+                      <div key={idx} className={`flex ${msg.role === 'candidate' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`flex flex-col gap-1 max-w-[85%] ${msg.role === 'candidate' ? 'items-end' : 'items-start'}`}>
+                           <div className="flex items-center gap-2 mb-1">
+                              {msg.role === 'interviewer' && (
+                                <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center">
+                                  <Bot className="w-3 h-3 text-indigo-600" />
+                                </div>
+                              )}
+                              <span className="text-[10px] text-slate-400 font-medium">
+                                {msg.role === 'candidate' ? '我' : '面试官'}
+                              </span>
+                              {msg.role === 'candidate' && (
+                                <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center">
+                                  <User className="w-3 h-3 text-slate-500" />
+                                </div>
+                              )}
+                           </div>
+                           <div className={`p-3.5 rounded-2xl text-sm leading-relaxed shadow-sm ${
+                             msg.role === 'candidate' 
+                             ? 'bg-indigo-600 text-white rounded-tr-sm' 
+                             : 'bg-white border border-slate-200 text-slate-700 rounded-tl-sm'
+                           }`}>
+                             {msg.content}
+                           </div>
+                        </div>
+                      </div>
+                    ))}
+                    <div ref={historyEndRef} />
+                 </div>
+              </div>
+            )}
         </div>
 
         {/* User Camera Pip */}
         {active && (
-          <div className="absolute top-4 right-4 w-24 h-32 bg-slate-200 rounded-xl overflow-hidden shadow-xl border-2 border-white z-20">
+          <div className={`absolute top-4 right-4 w-24 h-32 bg-slate-900 rounded-xl overflow-hidden shadow-xl border-2 border-white z-30 transition-all duration-300 ${showHistory ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
             {cameraOn ? (
               <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover transform scale-x-[-1]" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400">
-                <VideoOff className="w-8 h-8 opacity-50" />
+              <div className="w-full h-full flex items-center justify-center bg-slate-800 text-slate-500">
+                <VideoOff className="w-8 h-8" />
               </div>
             )}
           </div>
@@ -186,25 +280,25 @@ const ModuleInterview: React.FC = () => {
 
       {/* Controls Bar */}
       {active && (
-        <div className="bg-white border-t border-slate-100 pb-safe pt-4 px-6 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-30">
+        <div className="bg-white border-t border-slate-100 pb-6 pt-4 px-6 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-50 flex-shrink-0 relative">
           <div className="flex items-center justify-between max-w-xs mx-auto">
              <button 
               onClick={() => setMicOn(!micOn)}
-              className={`p-4 rounded-full transition-all shadow-sm ${micOn ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-red-50 text-red-500'}`}
+              className={`p-3.5 rounded-full transition-all shadow-sm ${micOn ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-red-50 text-red-500'}`}
             >
               {micOn ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
             </button>
             
             <button 
               onClick={stopInterview}
-              className="w-16 h-16 bg-red-500 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-red-500/30 active:scale-95 transition-transform"
+              className="w-14 h-14 bg-red-500 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-red-500/30 active:scale-95 transition-transform"
             >
-              <PhoneOff className="w-8 h-8 fill-current" />
+              <PhoneOff className="w-7 h-7 fill-current" />
             </button>
 
             <button 
               onClick={() => setCameraOn(!cameraOn)}
-              className={`p-4 rounded-full transition-all shadow-sm ${cameraOn ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-red-50 text-red-500'}`}
+              className={`p-3.5 rounded-full transition-all shadow-sm ${cameraOn ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-red-50 text-red-500'}`}
             >
               {cameraOn ? <VideoIcon className="w-6 h-6" /> : <VideoOff className="w-6 h-6" />}
             </button>
