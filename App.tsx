@@ -227,9 +227,9 @@ const DashboardChat: React.FC = () => {
       {/* Chat Area */}
       <div className={`flex-1 space-y-6 relative z-0 overscroll-none ${isChatting ? 'overflow-y-auto p-4 pt-20 no-scrollbar' : 'overflow-hidden flex flex-col pb-0 px-6'}`}>
         
-        {/* Empty State - Aligned to bottom */}
+        {/* Empty State - Aligned Higher with pt-32 */}
         {!isChatting && (
-          <div className="w-full flex flex-col items-center animate-in fade-in duration-700 justify-end h-full pb-10">
+          <div className="w-full flex flex-col items-center animate-in fade-in duration-700 justify-start h-full pt-32">
             
             <div className="mb-6 relative group">
                <div className="absolute inset-0 bg-indigo-400/30 blur-3xl rounded-full scale-150 opacity-60"></div>

@@ -161,7 +161,7 @@ const ModuleInterview: React.FC = () => {
                </button>
              </div>
            ) : (
-             <div className="w-full h-full flex flex-col items-center pt-12 px-6 relative z-10">
+             <div className="w-full h-full flex flex-col items-center pt-32 px-6 relative z-10">
                 {/* Avatar */}
                 <div className="relative flex-shrink-0">
                     <div className={`w-32 h-32 rounded-full border-4 overflow-hidden shadow-2xl transition-all duration-500 ${
