@@ -153,6 +153,25 @@ export const getInterviewerResponse = async (
 };
 
 /**
+ * Generates a hint/guidance for the user based on the interviewer's question
+ */
+export const getInterviewHint = async (question: string): Promise<string> => {
+  const prompt = `
+    作为面试教练，针对面试官的问题：“${question}”
+    请给候选人一个简短的回答思路提示（不要直接给答案，指出回答的关键点或STAR方向）。
+    限制在30字以内。
+    使用中文。
+  `;
+
+  const response = await ai.models.generateContent({
+    model: models.flash,
+    contents: prompt,
+  });
+
+  return response.text || "尝试使用 STAR 原则（情境-任务-行动-结果）来构建你的回答。";
+};
+
+/**
  * Generates a weekly report for the Copilot
  */
 export const generateWeeklyReport = async (tasks: string[]): Promise<string> => {

@@ -1,7 +1,6 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, MessageSquare, Sparkles, X, User, Bot } from 'lucide-react';
-import { getInterviewerResponse } from '../services/geminiService';
+import { Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, MessageSquare, Sparkles, X, User, Bot, Lightbulb } from 'lucide-react';
+import { getInterviewerResponse, getInterviewHint } from '../services/geminiService';
 
 const ModuleInterview: React.FC = () => {
   const [active, setActive] = useState(false);
@@ -11,12 +10,22 @@ const ModuleInterview: React.FC = () => {
   const [status, setStatus] = useState<'idle' | 'listening' | 'thinking' | 'speaking'>('idle');
   const [mode, setMode] = useState<'behavioral' | 'technical' | 'pressure'>('behavioral');
   const [showHistory, setShowHistory] = useState(false);
+  
+  // Practice Mode State
+  const [isPracticeMode, setIsPracticeMode] = useState(false);
+  const [hint, setHint] = useState('');
+  // Ref to track latest practice mode state in callbacks
+  const isPracticeModeRef = useRef(isPracticeMode);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const historyEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
   const Recognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+  useEffect(() => {
+    isPracticeModeRef.current = isPracticeMode;
+  }, [isPracticeMode]);
 
   // Camera handling
   useEffect(() => {
@@ -49,6 +58,7 @@ const ModuleInterview: React.FC = () => {
   const stopInterview = () => {
     setActive(false);
     setShowHistory(false);
+    setHint('');
     if (recognitionRef.current) recognitionRef.current.stop();
     window.speechSynthesis.cancel();
   };
@@ -57,10 +67,21 @@ const ModuleInterview: React.FC = () => {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'zh-CN';
+    
     utterance.onend = () => {
       setStatus('listening');
       startListening();
+      
+      // Hint Logic: If in practice mode, generate hint for the question just asked
+      if (active && isPracticeModeRef.current) {
+         setHint('AI 正在思考回答提示...');
+         getInterviewHint(text).then(h => {
+             // Only set if we are still waiting
+             setHint(h);
+         }).catch(() => setHint(''));
+      }
     };
+    
     window.speechSynthesis.speak(utterance);
   };
 
@@ -77,6 +98,7 @@ const ModuleInterview: React.FC = () => {
     recognition.onresult = async (event: any) => {
       const text = event.results[0][0].transcript;
       setStatus('thinking');
+      setHint(''); // Clear hint when user starts/finishes answering
       
       const newTranscript = [...transcript, { role: 'candidate', content: text }];
       setTranscript(newTranscript);
@@ -96,8 +118,6 @@ const ModuleInterview: React.FC = () => {
     recognition.onend = () => {
        if (status === 'listening') {
            // Optional: restart listening if silence? 
-           // For now, simplistic logic: if ended without result, user might need to press something or we assume silence.
-           // But to prevent loops, we won't auto-restart here indefinitely without VAD.
        }
     };
 
@@ -161,7 +181,7 @@ const ModuleInterview: React.FC = () => {
                </button>
              </div>
            ) : (
-             <div className="w-full h-full flex flex-col items-center pt-40 px-6 relative z-10">
+             <div className="w-full h-full flex flex-col items-center pt-20 px-6 relative z-10">
                 {/* Avatar */}
                 <div className="relative flex-shrink-0">
                     <div className={`w-32 h-32 rounded-full border-4 overflow-hidden shadow-2xl transition-all duration-500 ${
@@ -183,7 +203,7 @@ const ModuleInterview: React.FC = () => {
                   <p className="text-xs text-slate-400">正在进行：{mode === 'behavioral' ? '行为面试' : mode === 'technical' ? '技术面试' : '压力面试'}</p>
                 </div>
 
-                {/* Latest Question Bubble - Moved Here */}
+                {/* Latest Question Bubble - Moved higher */}
                 <div className="flex-1 w-full max-w-sm mt-4 flex flex-col items-center justify-start relative">
                   {lastInterviewerMessage ? (
                     <div className="bg-white/90 backdrop-blur-md p-6 rounded-2xl border border-indigo-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full relative animate-in fade-in slide-in-from-bottom-4 group">
@@ -210,6 +230,45 @@ const ModuleInterview: React.FC = () => {
                         </div>
                     </div>
                   )}
+
+                  {/* Hint Card (When in Practice Mode and Waiting) */}
+                  {active && isPracticeMode && hint && (
+                    <div className="mt-3 w-full bg-yellow-50 border border-yellow-200 p-3 rounded-xl flex gap-3 items-start animate-in fade-in slide-in-from-top-2 shadow-sm">
+                       <Lightbulb className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                       <div>
+                         <span className="text-xs font-bold text-yellow-700 block mb-1">面试小锦囊</span>
+                         <p className="text-xs text-yellow-800 leading-relaxed">
+                             {hint === 'AI 正在思考回答提示...' ? <span className="animate-pulse">AI 正在思考回答思路...</span> : hint}
+                         </p>
+                       </div>
+                    </div>
+                  )}
+
+                  {/* Practice Mode Toggle */}
+                  <div className="mt-4 flex items-center justify-center w-full">
+                    <button 
+                      onClick={() => {
+                        const newMode = !isPracticeMode;
+                        setIsPracticeMode(newMode);
+                        // If toggling on while listening, trigger hint immediately
+                        if (newMode && status === 'listening' && lastInterviewerMessage) {
+                             setHint('AI 正在思考回答提示...');
+                             getInterviewHint(lastInterviewerMessage.content).then(h => setHint(h));
+                        } else {
+                            if (!newMode) setHint('');
+                        }
+                      }}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium transition-all shadow-sm ${
+                        isPracticeMode 
+                          ? 'bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200' 
+                          : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Sparkles className={`w-3.5 h-3.5 ${isPracticeMode ? 'fill-indigo-300' : 'text-slate-400'}`} />
+                      {isPracticeMode ? '练习模式已开启' : '开启练习模式'}
+                    </button>
+                  </div>
+
                 </div>
              </div>
            )}
