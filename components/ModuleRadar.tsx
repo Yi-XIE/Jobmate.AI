@@ -1,11 +1,11 @@
-
 import React from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { useApp } from '../context/AppContext';
-import { Zap, TrendingUp, Award, BookOpen, Activity } from 'lucide-react';
+import { AppMode } from '../types';
+import { Zap, TrendingUp, Award, BookOpen, Activity, Video } from 'lucide-react';
 
 const ModuleRadar: React.FC = () => {
-  const { currentUser } = useApp();
+  const { currentUser, setMode } = useApp();
 
   // Mock Data based on a "Student/Job Seeker" profile
   const radarData = [
@@ -90,14 +90,27 @@ const ModuleRadar: React.FC = () => {
             <Award className="w-4 h-4 text-emerald-600" />
             核心优势
           </h3>
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             <li className="flex gap-2 text-xs text-slate-700 leading-relaxed">
               <span className="text-emerald-500 font-bold">•</span>
-              你的<span className="font-bold text-emerald-700">执行力</span>非常出色，在“校园音乐节”项目中展现了极强的落地能力。
+              <span>
+                <strong className="text-emerald-700 block mb-0.5">卓越的执行与落地能力</strong>
+                在“校园音乐节”和“市场自动化工具”项目中，你展现了从0到1解决问题的能力。不仅能应对突发的预算危机，还能主动通过技术手段优化工作流，这种“结果导向”的特质是雇主非常看重的。
+              </span>
             </li>
             <li className="flex gap-2 text-xs text-slate-700 leading-relaxed">
               <span className="text-emerald-500 font-bold">•</span>
-              具备良好的<span className="font-bold text-emerald-700">数据思维</span>，能熟练运用 Python 解决实际问题。
+              <span>
+                <strong className="text-emerald-700 block mb-0.5">数据驱动的思维模式</strong>
+                你习惯用数据说话（如“提升15%转化”、“R2 Score 0.92”）。在数据科学项目中，你没有机械地套用模型，而是深入思考了业务场景（地理位置插值），这种将技术与业务结合的能力非常稀缺。
+              </span>
+            </li>
+            <li className="flex gap-2 text-xs text-slate-700 leading-relaxed">
+              <span className="text-emerald-500 font-bold">•</span>
+              <span>
+                <strong className="text-emerald-700 block mb-0.5">跨界融合潜力</strong>
+                兼具计算机技术背景与活动组织经验，使你既能理解底层逻辑，又能处理人际协作，非常适合往“技术产品经理”或“项目经理”方向发展。
+              </span>
             </li>
           </ul>
         </div>
@@ -108,15 +121,15 @@ const ModuleRadar: React.FC = () => {
             <TrendingUp className="w-4 h-4 text-orange-500" />
             提升建议
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="flex gap-3">
               <div className="mt-0.5">
                 <Zap className="w-4 h-4 text-slate-300" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-slate-700">加强领导力叙述</h4>
-                <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                  虽然你有带队经验，但在简历中对“决策过程”的描述稍显薄弱，建议多补充一些协调冲突的细节。
+                <h4 className="text-xs font-bold text-slate-700">强化领导力中的“决策细节”</h4>
+                <p className="text-[11px] text-slate-500 mt-1 leading-relaxed text-justify">
+                  虽然你有带队经验，但在描述中对于“如何处理团队冲突”或“如何做出艰难决策”的心理博弈过程描述较少。建议在面试中准备 1-2 个关于“说服他人”的具体案例，体现你的软性影响力。
                 </p>
               </div>
             </div>
@@ -125,11 +138,24 @@ const ModuleRadar: React.FC = () => {
                 <BookOpen className="w-4 h-4 text-slate-300" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-slate-700">补充商业思维</h4>
-                <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                  尝试了解项目背后的商业逻辑（如 ROI 分析），这将有助于你申请产品经理类岗位。
+                <h4 className="text-xs font-bold text-slate-700">补充宏观商业视角</h4>
+                <p className="text-[11px] text-slate-500 mt-1 leading-relaxed text-justify">
+                  你的经历多集中在具体的执行层面。为了进阶，建议尝试思考项目背后的商业价值（如 ROI 分析、市场竞品分析）。例如，在介绍自动化工具时，除了提效率提升，还可以预估其节省的人力成本金额。
                 </p>
               </div>
+            </div>
+            
+            {/* Targeted Training Button */}
+            <div className="pt-2">
+                <button 
+                  onClick={() => setMode(AppMode.INTERVIEW)}
+                  className="w-full py-3 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-indigo-100 hover:shadow-sm transition-all active:scale-95 group"
+                >
+                  <span className="p-1 bg-indigo-200 rounded-full group-hover:bg-white transition-colors">
+                     <Video className="w-3.5 h-3.5 fill-current" />
+                  </span>
+                  针对性面试培训 (Video Practice)
+                </button>
             </div>
           </div>
         </div>

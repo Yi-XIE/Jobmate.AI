@@ -172,6 +172,38 @@ export const getInterviewHint = async (question: string): Promise<string> => {
 };
 
 /**
+ * Generates a detailed AI analysis based on interview feedback
+ */
+export const generateFeedbackAnalysis = async (feedback: any): Promise<string> => {
+  const prompt = `
+    请作为一位资深的面试教练，对以下面试反馈进行深度解读和总结：
+
+    面试类型: ${feedback.type === 'behavioral' ? '行为面试' : feedback.type === 'technical' ? '技术面试' : '压力面试'}
+    得分: ${feedback.score}/100
+    原始评价: ${feedback.summary}
+    识别出的优点: ${feedback.strengths.join(', ')}
+    需要改进点: ${feedback.improvements.join(', ')}
+
+    请输出一段 "AI 深度点评"，包含：
+    1. **表现复盘**：用一句话总结表现的核心亮点与不足本质。
+    2. **关键提升策略**：针对"需要改进点"，给出2-3条非常具体的训练方法或话术建议。
+    3. **下一步计划**：给出一个具体的行动指令。
+
+    要求：
+    - 使用清晰的分点列表格式。
+    - 语气真诚、一针见血。
+    - 控制在 200 字以内。
+  `;
+
+  const response = await ai.models.generateContent({
+    model: models.flash,
+    contents: prompt,
+  });
+
+  return response.text || "无法生成分析，请稍后重试。";
+};
+
+/**
  * Generates a weekly report for the Copilot
  */
 export const generateWeeklyReport = async (tasks: string[]): Promise<string> => {

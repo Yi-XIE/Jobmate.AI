@@ -1,46 +1,112 @@
 import React, { useState } from 'react';
-import { RefreshCw, CheckCircle, Settings2, Eye, Loader2, Target, ChevronRight, Edit3, Save, Download } from 'lucide-react';
+import { RefreshCw, CheckCircle, Settings2, Eye, Loader2, Target, ChevronRight, Edit3, Save, Download, FileText } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { generateResumeContent } from '../services/geminiService';
 import { AppMode } from '../types';
 
+// Enhanced Simple Markdown Renderer
 const SimpleMarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
   const lines = content.split('\n');
+
+  const parseInline = (text: string) => {
+    // Handle bold: **text** or __text__
+    // We split by the bold markers.
+    const parts = text.split(/(\*\*.*?\*\*|__.*?__)/g);
+    return parts.map((part, index) => {
+      if ((part.startsWith('**') && part.endsWith('**')) || (part.startsWith('__') && part.endsWith('__'))) {
+        return <strong key={index} className="font-bold text-slate-900">{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
+  };
   
   return (
-    <div className="prose prose-sm max-w-none">
+    <div className="prose prose-sm max-w-none text-slate-700">
       {lines.map((line, index) => {
+        const trimmed = line.trim();
+        
+        // Skip empty lines in some contexts or render spacer
+        if (!trimmed) {
+          return <div key={index} className="h-3"></div>;
+        }
+
         // H1
         if (line.startsWith('# ')) {
-          return <h1 key={index} className="text-2xl font-bold text-slate-900 mb-4 border-b pb-2">{line.replace('# ', '')}</h1>;
+          return <h1 key={index} className="text-2xl font-extrabold text-slate-900 mb-4 pb-2 border-b border-slate-100">{parseInline(line.replace('# ', ''))}</h1>;
         }
         // H2
         if (line.startsWith('## ')) {
-          return <h2 key={index} className="text-lg font-bold text-slate-800 mt-6 mb-3 flex items-center before:w-1 before:h-4 before:bg-primary before:mr-2 before:rounded-full">{line.replace('## ', '')}</h2>;
+          return <h2 key={index} className="text-lg font-bold text-slate-800 mt-6 mb-3 flex items-center"><span className="w-1.5 h-5 bg-primary rounded-full mr-2"></span>{parseInline(line.replace('## ', ''))}</h2>;
         }
-        // Bold line (simple heuristic for roles/schools)
-        if (line.startsWith('**') && line.endsWith('**')) {
-          return <div key={index} className="font-bold text-slate-700 mt-2 mb-1">{line.replace(/\*\*/g, '')}</div>;
+        // H3
+        if (line.startsWith('### ')) {
+            return <h3 key={index} className="text-base font-bold text-slate-800 mt-4 mb-2">{parseInline(line.replace('### ', ''))}</h3>;
         }
+        
         // Bullet points
-        if (line.trim().startsWith('- ')) {
+        if (trimmed.startsWith('- ') || trimmed.startsWith('* ') || trimmed.startsWith('• ')) {
+           const content = trimmed.replace(/^[-*•]\s+/, '');
            return (
-             <div key={index} className="flex gap-2 text-slate-600 text-sm leading-relaxed ml-1 mb-1">
-               <span className="text-slate-400">•</span>
-               <span>{line.replace('- ', '').replace(/\*\*/g, '')}</span>
+             <div key={index} className="flex gap-2 text-slate-600 text-sm leading-relaxed ml-1 mb-1.5">
+               <span className="text-primary/60 mt-1.5 text-[6px] flex-shrink-0">●</span>
+               <span className="flex-1">{parseInline(content)}</span>
              </div>
            )
         }
-        // Empty line
-        if (!line.trim()) {
-          return <div key={index} className="h-2"></div>;
+        
+        // Numbered lists (simple support)
+        if (/^\d+\.\s/.test(trimmed)) {
+            const content = trimmed.replace(/^\d+\.\s+/, '');
+            const number = trimmed.match(/^\d+/)?.[0];
+            return (
+                <div key={index} className="flex gap-2 text-slate-600 text-sm leading-relaxed ml-1 mb-1.5">
+                    <span className="text-slate-500 font-bold text-xs mt-0.5 min-w-[16px]">{number}.</span>
+                    <span className="flex-1">{parseInline(content)}</span>
+                </div>
+            )
         }
-        // Plain text
-        return <p key={index} className="text-slate-600 text-sm mb-1">{line}</p>;
+
+        // Horizontal Rule
+        if (trimmed === '---' || trimmed === '***') {
+            return <hr key={index} className="my-4 border-slate-200" />;
+        }
+
+        // Plain text (potentially with inline formatting)
+        return <p key={index} className="text-slate-600 text-sm mb-1.5 leading-relaxed">{parseInline(line)}</p>;
       })}
     </div>
   );
 };
+
+const SaveSuccessModal: React.FC<{ onClose: () => void, onView: () => void }> = ({ onClose, onView }) => (
+  <div className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/20 backdrop-blur-[2px] animate-in fade-in duration-200">
+    <div className="bg-white rounded-2xl p-6 w-full max-w-xs shadow-2xl scale-100 animate-in zoom-in-95 duration-200 border border-slate-100">
+      <div className="flex flex-col items-center text-center">
+        <div className="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center mb-4 shadow-sm ring-4 ring-green-50/50">
+          <CheckCircle className="w-7 h-7 text-green-500" />
+        </div>
+        <h3 className="text-lg font-extrabold text-slate-800 mb-2">保存成功</h3>
+        <p className="text-xs text-slate-500 mb-6 leading-relaxed px-2">
+          您的简历已安全保存。<br/>您可以在“我的简历”中随时查看和导出。
+        </p>
+        <div className="flex flex-col w-full gap-3">
+          <button 
+            onClick={onView}
+            className="w-full py-3 bg-primary text-white text-sm rounded-xl font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 active:scale-95"
+          >
+            前往我的简历
+          </button>
+          <button 
+            onClick={onClose}
+            className="w-full py-3 bg-slate-50 text-slate-600 text-sm rounded-xl font-bold hover:bg-slate-100 transition-colors active:scale-95"
+          >
+            继续编辑
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 const ModuleResume: React.FC = () => {
   const { experiences, resumeText, setResumeText, setMode, saveCurrentResume } = useApp();
@@ -48,6 +114,7 @@ const ModuleResume: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedExpIds, setSelectedExpIds] = useState<Set<string>>(new Set(experiences.map(e => e.id)));
   const [activeTab, setActiveTab] = useState<'config' | 'editor' | 'preview'>('config');
+  const [showSaveModal, setShowSaveModal] = useState(false);
 
   const toggleExp = (id: string) => {
     const newSet = new Set(selectedExpIds);
@@ -62,6 +129,7 @@ const ModuleResume: React.FC = () => {
     try {
       const activeExps = experiences.filter(e => selectedExpIds.has(e.id));
       const newContent = await generateResumeContent(activeExps, targetRole);
+      // Ensure we have a clean markdown format
       const newResume = `# 申请岗位：${targetRole}\n\n${newContent}`;
       setResumeText(newResume);
       setActiveTab('preview');
@@ -74,11 +142,19 @@ const ModuleResume: React.FC = () => {
 
   const handleSave = () => {
     saveCurrentResume();
-    alert("简历已保存到“我的简历库”！");
+    setShowSaveModal(true);
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-50">
+    <div className="flex flex-col h-full bg-slate-50 relative">
+      {/* Save Success Modal Overlay */}
+      {showSaveModal && (
+        <SaveSuccessModal 
+          onClose={() => setShowSaveModal(false)} 
+          onView={() => { setShowSaveModal(false); setMode(AppMode.RESUME_LIST); }} 
+        />
+      )}
+
       {/* Top Bar with Tabs & Actions */}
       <div className="bg-white border-b border-slate-200 px-4 flex justify-between items-center sticky top-0 z-20">
         <div className="flex gap-6 pt-2">
@@ -105,7 +181,7 @@ const ModuleResume: React.FC = () => {
         {(activeTab === 'editor' || activeTab === 'preview') && (
            <button 
              onClick={handleSave}
-             className="mb-2 px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-lg shadow-md hover:bg-slate-800 transition-colors flex items-center gap-1.5"
+             className="mb-2 px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-lg shadow-md hover:bg-slate-800 transition-colors flex items-center gap-1.5 active:scale-95"
            >
              <Save className="w-3 h-3" /> 保存
            </button>
@@ -171,21 +247,21 @@ const ModuleResume: React.FC = () => {
             />
            </div>
            <div className="px-4 pb-4 text-center text-xs text-slate-400">
-             支持 Markdown 语法编辑
+             支持 Markdown 语法编辑 (使用 **加粗**)
            </div>
         </div>
 
         {/* --- 3. Preview Tab (Rendered) --- */}
         <div className={`absolute inset-0 bg-white flex flex-col transition-opacity duration-300 ${activeTab === 'preview' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
-           <div className="flex-1 p-6 overflow-y-auto bg-white">
-             <div className="max-w-2xl mx-auto bg-white min-h-full shadow-sm p-4 rounded-none sm:rounded-none">
+           <div className="flex-1 p-6 overflow-y-auto bg-slate-50/50">
+             <div className="max-w-2xl mx-auto bg-white min-h-[800px] shadow-sm border border-slate-100 p-8 rounded-sm">
                 <SimpleMarkdownRenderer content={resumeText} />
              </div>
            </div>
            
            {/* Action Bar for Match */}
-           <div className="p-4 border-t border-slate-100 bg-slate-50 flex gap-3">
-             <button className="flex-1 py-3 bg-white text-slate-700 border border-slate-200 rounded-xl font-bold shadow-sm flex items-center justify-center gap-2">
+           <div className="p-4 border-t border-slate-100 bg-white flex gap-3 shadow-[0_-5px_15px_rgba(0,0,0,0.02)] z-10">
+             <button className="flex-1 py-3 bg-white text-slate-700 border border-slate-200 rounded-xl font-bold shadow-sm flex items-center justify-center gap-2 hover:bg-slate-50">
                <Download className="w-4 h-4" /> 导出 PDF
              </button>
              <button

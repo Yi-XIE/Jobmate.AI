@@ -11,6 +11,7 @@ export enum AppMode {
 
 export interface StarExperience {
   id: string;
+  type?: 'work' | 'campus'; // Distinguish between work and campus experiences
   title: string;
   date: string;
   situation: string;
