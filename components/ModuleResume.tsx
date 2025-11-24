@@ -148,6 +148,22 @@ const ModuleResume: React.FC = () => {
     setShowSaveModal(true);
   };
 
+  const handleExportPDF = () => {
+    // 1. Temporarily change the document title to the Resume title for the filename
+    const originalTitle = document.title;
+    const resumeTitleLine = resumeText.split('\n')[0] || 'Resume';
+    const cleanTitle = resumeTitleLine.replace(/^#\s*/, '').trim() || '我的简历';
+    document.title = `${cleanTitle} - JobMate导出`;
+
+    // 2. Trigger browser print (handled by media queries in index.html)
+    window.print();
+
+    // 3. Restore title
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 500);
+  };
+
   return (
     <div className="flex flex-col h-full bg-slate-50 relative">
       {/* Save Success Modal Overlay */}
@@ -209,33 +225,55 @@ const ModuleResume: React.FC = () => {
           <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
             <h3 className="font-bold text-slate-800 mb-3 text-sm">2. 选择经历 (Experience Library)</h3>
             <div className="space-y-3">
-              {experiences.map(exp => (
-                <div 
-                  key={exp.id}
-                  onClick={() => toggleExp(exp.id)}
-                  className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                    selectedExpIds.has(exp.id) 
-                    ? 'border-primary bg-primary/5 ring-1 ring-primary/50' 
-                    : 'border-slate-100 bg-slate-50'
-                  }`}
-                >
-                  <div className="flex justify-between items-start mb-1">
-                    <h4 className="font-bold text-slate-800 text-sm">{exp.title}</h4>
-                    {selectedExpIds.has(exp.id) && <CheckCircle className="w-4 h-4 text-primary" />}
-                  </div>
-                  <p className="text-xs text-slate-500 line-clamp-2">{exp.situation} {exp.action}</p>
-                </div>
-              ))}
+              {experiences.map(exp => {
+                 const isSelected = selectedExpIds.has(exp.id);
+                 return (
+                    <div 
+                      key={exp.id}
+                      onClick={() => toggleExp(exp.id)}
+                      className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 relative group overflow-hidden ${
+                        isSelected 
+                        ? 'border-primary bg-indigo-50/50 shadow-md ring-1 ring-indigo-500/20 scale-[1.01]' 
+                        : 'border-slate-100 bg-slate-50 hover:bg-slate-100 hover:border-slate-200'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-2 relative z-10">
+                        <h4 className={`font-bold text-sm transition-colors ${isSelected ? 'text-primary' : 'text-slate-700'}`}>
+                            {exp.title}
+                        </h4>
+                        <div className={`transition-all duration-300 transform ${isSelected ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-50 -rotate-90'}`}>
+                             <CheckCircle className="w-5 h-5 text-primary fill-white" />
+                        </div>
+                      </div>
+                      <p className={`text-xs transition-colors line-clamp-2 leading-relaxed relative z-10 ${isSelected ? 'text-indigo-900/60' : 'text-slate-500'}`}>
+                          {exp.situation} {exp.action}
+                      </p>
+                    </div>
+                  );
+              })}
             </div>
           </div>
 
           <button
             onClick={handleGenerate}
             disabled={isGenerating}
-            className="w-full py-3.5 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/30 hover:shadow-primary/40 transition-all flex items-center justify-center gap-2"
+            className={`w-full py-4 rounded-xl font-bold text-sm shadow-lg transition-all duration-300 flex items-center justify-center gap-2 text-white ${
+                isGenerating 
+                ? 'bg-indigo-400 cursor-not-allowed shadow-none' 
+                : 'bg-primary hover:bg-primary/90 shadow-primary/30 hover:shadow-primary/40 active:scale-[0.98]'
+            }`}
           >
-            {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <RefreshCw className="w-5 h-5" />}
-            生成专属简历
+            {isGenerating ? (
+               <div className="flex items-center gap-2 animate-pulse">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>AI 正在为您定制简历...</span>
+               </div>
+            ) : (
+               <>
+                  <RefreshCw className="w-5 h-5" />
+                  <span>生成专属简历</span>
+               </>
+            )}
           </button>
         </div>
 
@@ -257,14 +295,18 @@ const ModuleResume: React.FC = () => {
         {/* --- 3. Preview Tab (Rendered) --- */}
         <div className={`absolute inset-0 bg-white flex flex-col transition-opacity duration-300 ${activeTab === 'preview' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
            <div className="flex-1 p-6 overflow-y-auto bg-slate-50/50">
-             <div className="max-w-2xl mx-auto bg-white min-h-[800px] shadow-sm border border-slate-100 p-8 rounded-sm">
+             {/* ID added for Print Target */}
+             <div id="resume-preview-container" className="max-w-2xl mx-auto bg-white min-h-[800px] shadow-sm border border-slate-100 p-8 rounded-sm print:shadow-none print:border-none">
                 <SimpleMarkdownRenderer content={resumeText} />
              </div>
            </div>
            
            {/* Action Bar for Match */}
            <div className="p-4 border-t border-slate-100 bg-white flex gap-3 shadow-[0_-5px_15px_rgba(0,0,0,0.02)] z-10">
-             <button className="flex-1 py-3 bg-white text-slate-700 border border-slate-200 rounded-xl font-bold shadow-sm flex items-center justify-center gap-2 hover:bg-slate-50">
+             <button 
+                onClick={handleExportPDF}
+                className="flex-1 py-3 bg-white text-slate-700 border border-slate-200 rounded-xl font-bold shadow-sm flex items-center justify-center gap-2 hover:bg-slate-50"
+             >
                <Download className="w-4 h-4" /> 导出 PDF
              </button>
              <button

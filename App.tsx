@@ -13,6 +13,26 @@ import { ChevronLeft, Target, Plus, Send, Bot, FileText, Video, Database, Mic, M
 import { createMiningChat, generateChatTitle, generateStarFromChat } from './services/geminiService';
 import { Chat } from '@google/genai';
 
+// --- Constants & Helpers ---
+
+const suggestionPool = [
+  { icon: "🚀", label: "挖掘项目经历亮点", prompt: "挖掘一下我最近的项目经历亮点" },
+  { icon: "😰", label: "面试遇到难题怎么救场？", prompt: "面试遇到不懂的问题该怎么回答？" },
+  { icon: "✨", label: "帮我优化自我介绍", prompt: "帮我优化一下我的自我介绍" },
+  { icon: "🎓", label: "社团经历怎么写？", prompt: "如何把社团活动包装成职场能力？" },
+  { icon: "💣", label: "回答“最大的缺点”", prompt: "如何回答“你最大的缺点是什么”？" },
+  { icon: "🎯", label: "提炼 STAR 法则", prompt: "帮我把这段经历整理成 STAR 格式" },
+  { icon: "💼", label: "入职注意事项", prompt: "入职第一周应该注意什么？" },
+  { icon: "📈", label: "量化工作产出", prompt: "帮我量化一下我的工作产出，使其看起来更专业" },
+  { icon: "🔍", label: "简历诊断", prompt: "请帮我诊断一下简历中的逻辑漏洞" },
+  { icon: "💡", label: "职业规划建议", prompt: "我该选大公司还是创业公司？" },
+];
+
+const getRandomSuggestions = () => {
+  const shuffled = [...suggestionPool].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, 3);
+};
+
 // --- Components ---
 
 const JobMateAvatar: React.FC<{ size?: 'sm' | 'lg' }> = ({ size = 'sm' }) => {
@@ -170,6 +190,7 @@ const DashboardChat: React.FC = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [lastReadMessageId, setLastReadMessageId] = useState<string | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [suggestions, setSuggestions] = useState(getRandomSuggestions());
   
   const chatSessionRef = useRef<Chat | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -181,6 +202,13 @@ const DashboardChat: React.FC = () => {
       chatSessionRef.current = createMiningChat();
     }
   }, []);
+
+  // Refresh suggestions when returning to empty chat
+  useEffect(() => {
+    if (messages.length === 0) {
+      setSuggestions(getRandomSuggestions());
+    }
+  }, [messages.length]);
 
   // Scroll to bottom
   useEffect(() => {
@@ -402,15 +430,11 @@ const DashboardChat: React.FC = () => {
             
             {/* Conversation Starters - Compact Layout */}
             <div className="w-full max-w-[280px] space-y-2">
-               <button onClick={() => handleSendMessage("挖掘一下我最近的项目经历亮点")} className="w-full px-4 py-2.5 bg-white rounded-xl text-left text-slate-600 text-sm hover:bg-slate-50 hover:shadow-md transition-all border border-slate-100 shadow-sm flex items-center gap-3 group">
-                 <span className="text-lg group-hover:scale-110 transition-transform">🚀</span> <span className="font-medium text-slate-700">挖掘项目经历亮点</span>
-               </button>
-               <button onClick={() => handleSendMessage("面试遇到不懂的问题该怎么回答？")} className="w-full px-4 py-2.5 bg-white rounded-xl text-left text-slate-600 text-sm hover:bg-slate-50 hover:shadow-md transition-all border border-slate-100 shadow-sm flex items-center gap-3 group">
-                 <span className="text-lg group-hover:scale-110 transition-transform">😰</span> <span className="font-medium text-slate-700">面试遇到难题怎么救场？</span>
-               </button>
-               <button onClick={() => handleSendMessage("帮我优化一下我的自我介绍")} className="w-full px-4 py-2.5 bg-white rounded-xl text-left text-slate-600 text-sm hover:bg-slate-50 hover:shadow-md transition-all border border-slate-100 shadow-sm flex items-center gap-3 group">
-                 <span className="text-lg group-hover:scale-110 transition-transform">✨</span> <span className="font-medium text-slate-700">帮我优化自我介绍</span>
-               </button>
+               {suggestions.map((s, i) => (
+                 <button key={i} onClick={() => handleSendMessage(s.prompt)} className="w-full px-4 py-2.5 bg-white rounded-xl text-left text-slate-600 text-sm hover:bg-slate-50 hover:shadow-md transition-all border border-slate-100 shadow-sm flex items-center gap-3 group">
+                   <span className="text-lg group-hover:scale-110 transition-transform">{s.icon}</span> <span className="font-medium text-slate-700">{s.label}</span>
+                 </button>
+               ))}
             </div>
           </div>
         )}

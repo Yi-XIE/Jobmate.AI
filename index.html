@@ -63,6 +63,47 @@
         width: 100%;
         overflow: hidden;
       }
+
+      /* Print styles for PDF Export */
+      @media print {
+        @page { margin: 0; size: auto; }
+        
+        /* Hide everything by default */
+        body * {
+          visibility: hidden;
+        }
+
+        /* Reset html/body for printing */
+        html, body {
+          height: auto !important;
+          overflow: visible !important;
+          position: static !important;
+          background: white !important;
+        }
+
+        /* Make the resume container visible and positioned correctly */
+        #resume-preview-container, #resume-preview-container * {
+          visibility: visible;
+        }
+
+        #resume-preview-container {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          margin: 0 !important;
+          padding: 2rem !important; /* Add appropriate padding for A4 */
+          background: white !important;
+          border: none !important;
+          box-shadow: none !important;
+          z-index: 9999;
+        }
+        
+        /* Ensure standard text colors for print */
+        .prose {
+          color: black !important;
+        }
+      }
     </style>
   <script type="importmap">
 {
