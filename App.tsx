@@ -4,13 +4,13 @@ import { AppProvider, useApp } from './context/AppContext';
 import ModuleResume from './components/ModuleResume';
 import ModuleMatch from './components/ModuleMatch';
 import ModuleInterview from './components/ModuleInterview';
-import ModuleRadar from './components/ModuleRadar'; // Changed from ModuleCopilot
+import ModuleRadar from './components/ModuleRadar';
 import ModuleAssets from './components/ModuleAssets';
 import ModuleResumeList from './components/ModuleResumeList';
 import UserMenu from './components/UserMenu'; 
-import { AppMode, Message } from './types';
-import { ChevronLeft, Target, Plus, Send, Bot, FileText, Video, Database, Mic, MicOff, Volume2, VolumeX, PlayCircle, StopCircle, Activity } from 'lucide-react'; // Added Activity icon
-import { createMiningChat, generateChatTitle } from './services/geminiService';
+import { AppMode, Message, StarExperience } from './types';
+import { ChevronLeft, Target, Plus, Send, Bot, FileText, Video, Database, Mic, MicOff, Volume2, VolumeX, PlayCircle, StopCircle, Activity, Archive, CheckCircle2, Loader2, Sparkles, X } from 'lucide-react';
+import { createMiningChat, generateChatTitle, generateStarFromChat } from './services/geminiService';
 import { Chat } from '@google/genai';
 
 // --- Components ---
@@ -27,16 +27,149 @@ const JobMateAvatar: React.FC<{ size?: 'sm' | 'lg' }> = ({ size = 'sm' }) => {
   );
 };
 
+// --- Modal for Saving Experience ---
+const SaveExperienceModal: React.FC<{ 
+    isOpen: boolean, 
+    onClose: () => void, 
+    messages: Message[], 
+    chatTitle: string,
+    onSaveSuccess: () => void 
+}> = ({ isOpen, onClose, messages, chatTitle, onSaveSuccess }) => {
+    const { addExperience, saveChatSession } = useApp();
+    const [step, setStep] = useState<'loading' | 'preview'>('loading');
+    const [generatedExp, setGeneratedExp] = useState<Partial<StarExperience> | null>(null);
+
+    useEffect(() => {
+        if (isOpen && messages.length > 0) {
+            setStep('loading');
+            generateStarFromChat(messages)
+                .then(exp => {
+                    setGeneratedExp(exp);
+                    setStep('preview');
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("挖掘失败，请重试");
+                    onClose();
+                });
+        }
+    }, [isOpen, messages]);
+
+    const handleConfirmSave = () => {
+        if (generatedExp) {
+            const newExp: StarExperience = {
+                id: Date.now().toString(),
+                title: generatedExp.title || '未命名经历',
+                date: generatedExp.date || new Date().toISOString().slice(0, 7),
+                type: 'work', // Default or inferred? AI currently doesn't infer type well, defaulting to work or let user edit later
+                situation: generatedExp.situation || '',
+                task: generatedExp.task || '',
+                action: generatedExp.action || '',
+                result: generatedExp.result || '',
+                tags: generatedExp.tags || ['沟通能力']
+            };
+            
+            // 1. Save to Experience List
+            addExperience(newExp);
+            // 2. Archive Chat
+            saveChatSession(messages, chatTitle || generatedExp.title || '对话归档');
+            
+            onSaveSuccess();
+        }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[80vh]">
+                {step === 'loading' ? (
+                    <div className="p-10 flex flex-col items-center justify-center text-center">
+                        <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-4 relative">
+                            <Sparkles className="w-8 h-8 text-indigo-500 animate-pulse" />
+                            <div className="absolute inset-0 border-4 border-indigo-100 border-t-indigo-500 rounded-full animate-spin"></div>
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-800">AI 正在提炼经历精华...</h3>
+                        <p className="text-sm text-slate-500 mt-2">正在分析对话，整理 STAR 结构</p>
+                    </div>
+                ) : (
+                    <>
+                        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-indigo-50/50">
+                             <div className="flex items-center gap-2">
+                                 <div className="p-1.5 bg-green-100 text-green-600 rounded-lg">
+                                     <CheckCircle2 className="w-4 h-4" />
+                                 </div>
+                                 <h3 className="font-bold text-slate-800">挖掘成功</h3>
+                             </div>
+                             <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100">
+                                 <X className="w-5 h-5" />
+                             </button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                             <div className="space-y-1">
+                                 <label className="text-xs font-bold text-slate-400 uppercase">标题</label>
+                                 <h2 className="text-lg font-bold text-slate-900">{generatedExp?.title}</h2>
+                             </div>
+                             
+                             <div className="flex flex-wrap gap-2">
+                                 {generatedExp?.tags?.map((t, i) => (
+                                     <span key={i} className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">{t}</span>
+                                 ))}
+                             </div>
+
+                             <div className="space-y-3 pt-2">
+                                <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100">
+                                    <span className="text-[10px] font-bold text-blue-500 bg-blue-100 px-1.5 py-0.5 rounded mb-1 inline-block">Situation</span>
+                                    <p className="text-xs text-slate-700 leading-relaxed">{generatedExp?.situation}</p>
+                                </div>
+                                <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100">
+                                    <span className="text-[10px] font-bold text-indigo-500 bg-indigo-100 px-1.5 py-0.5 rounded mb-1 inline-block">Task</span>
+                                    <p className="text-xs text-slate-700 leading-relaxed">{generatedExp?.task}</p>
+                                </div>
+                                <div className="p-3 bg-purple-50/50 rounded-xl border border-purple-100">
+                                    <span className="text-[10px] font-bold text-purple-500 bg-purple-100 px-1.5 py-0.5 rounded mb-1 inline-block">Action</span>
+                                    <p className="text-xs text-slate-700 leading-relaxed">{generatedExp?.action}</p>
+                                </div>
+                                <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                                    <span className="text-[10px] font-bold text-emerald-500 bg-emerald-100 px-1.5 py-0.5 rounded mb-1 inline-block">Result</span>
+                                    <p className="text-xs text-slate-700 leading-relaxed">{generatedExp?.result}</p>
+                                </div>
+                             </div>
+                        </div>
+
+                        <div className="p-4 border-t border-slate-100 bg-slate-50 flex gap-3">
+                            <button 
+                                onClick={onClose}
+                                className="flex-1 py-3 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl text-sm"
+                            >
+                                放弃
+                            </button>
+                            <button 
+                                onClick={handleConfirmSave}
+                                className="flex-[2] py-3 bg-indigo-600 text-white font-bold rounded-xl text-sm shadow-lg shadow-indigo-200 active:scale-95 transition-transform"
+                            >
+                                保存并归档
+                            </button>
+                        </div>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+};
+
 // --- Dashboard Chat Component ---
 
 const DashboardChat: React.FC = () => {
-  const { setMode, messages, setMessages, setCurrentChatTitle } = useApp();
+  const { setMode, messages, setMessages, setCurrentChatTitle, currentChatTitle, saveChatSession } = useApp();
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [autoPlayAudio, setAutoPlayAudio] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [lastReadMessageId, setLastReadMessageId] = useState<string | null>(null);
+  const [showSaveModal, setShowSaveModal] = useState(false);
   
   const chatSessionRef = useRef<Chat | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -198,6 +331,21 @@ const DashboardChat: React.FC = () => {
     recognition.start();
   };
 
+  const handleFinishSession = () => {
+      if (messages.length < 2) {
+          alert("对话内容太少，无法生成经历。请多聊几句！");
+          return;
+      }
+      setShowSaveModal(true);
+  };
+
+  const handleSaveSuccess = () => {
+      setShowSaveModal(false);
+      setMessages([]);
+      setCurrentChatTitle("");
+      setMode(AppMode.ASSETS); // Redirect to Assets page to see the new item
+  };
+
   const handleAttachment = () => {
     alert("打开文件选择器... (支持 PDF, Word, 图片)");
   };
@@ -207,7 +355,7 @@ const DashboardChat: React.FC = () => {
     { label: '简历生成', icon: FileText, mode: AppMode.RESUME, color: 'text-blue-600' },
     { label: '视频面试', icon: Video, mode: AppMode.INTERVIEW, color: 'text-purple-600' },
     { label: '能力雷达', icon: Activity, mode: AppMode.RADAR, color: 'text-emerald-600' }, // Updated
-    { label: '匹配检测', icon: Target, mode: AppMode.MATCH, color: 'text-orange-600' },
+    { label: '人岗匹配', icon: Target, mode: AppMode.MATCH, color: 'text-orange-600' }, // Updated Label
   ];
 
   const isChatting = messages.length > 0;
@@ -223,6 +371,15 @@ const DashboardChat: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full relative bg-slate-50 overflow-hidden">
+      
+      {/* Save Experience Modal */}
+      <SaveExperienceModal 
+        isOpen={showSaveModal} 
+        onClose={() => setShowSaveModal(false)}
+        messages={messages}
+        chatTitle={currentChatTitle}
+        onSaveSuccess={handleSaveSuccess}
+      />
       
       {/* Chat Area */}
       <div className={`flex-1 space-y-6 relative z-0 overscroll-none ${isChatting ? 'overflow-y-auto p-4 pt-20 no-scrollbar' : 'overflow-hidden flex flex-col pb-0 px-6'}`}>
@@ -335,72 +492,87 @@ const DashboardChat: React.FC = () => {
           </div>
         )}
 
-        {/* Global Mute Control when Chatting */}
+        {/* Chat Controls Row (Finish & Mute) */}
         {isChatting && (
-          <div className="px-4 mb-1 flex justify-between items-center">
-            <div className="text-[10px] text-slate-400 ml-1">
-              {isSpeaking ? "正在播放语音..." : isListening ? "正在听..." : ""}
+          <div className="px-4 mb-2 flex justify-between items-center">
+             {/* Left: Finish Button (Styled like Auto Read) */}
+             <button 
+                  onClick={handleFinishSession}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-medium transition-colors bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 shadow-sm"
+                >
+                  <Archive className="w-3.5 h-3.5" />
+                  <span>结束并保存</span>
+             </button>
+
+             <div className="flex items-center gap-3">
+                <div className="text-[10px] text-slate-400 hidden sm:block">
+                  {isSpeaking ? "正在播放..." : isListening ? "正在听..." : ""}
+                </div>
+                
+                {/* Right: Auto Read Button */}
+                <button 
+                  onClick={() => {
+                    if (isSpeaking) stopSpeaking();
+                    setAutoPlayAudio(!autoPlayAudio);
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-medium transition-colors border ${
+                    autoPlayAudio ? 'bg-indigo-50 text-indigo-600 border-indigo-50' : 'bg-slate-100 text-slate-400 border-slate-200'
+                  }`}
+                >
+                  {autoPlayAudio ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+                  {autoPlayAudio ? '自动朗读' : '已静音'}
+                </button>
             </div>
-            <button 
-              onClick={() => {
-                if (isSpeaking) stopSpeaking();
-                setAutoPlayAudio(!autoPlayAudio);
-              }}
-              className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] transition-colors ${
-                autoPlayAudio ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-400'
-              }`}
-            >
-              {autoPlayAudio ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
-              {autoPlayAudio ? '自动朗读' : '已静音'}
-            </button>
           </div>
         )}
 
         {/* Input Bar */}
         <div className="px-4 pb-4">
-          <div className={`flex gap-2 items-end bg-white rounded-[24px] p-1.5 border shadow-[0_2px_15px_rgba(0,0,0,0.05)] transition-all duration-300 ${
-            isListening ? 'border-red-400 ring-4 ring-red-50 shadow-red-100' : 'border-slate-200'
-          }`}>
-            <button
-              onClick={handleAttachment}
-              className="w-9 h-9 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center flex-shrink-0 hover:bg-slate-100 hover:text-indigo-500 transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
-            
-            <textarea
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              placeholder={isListening ? "请说话..." : "发消息..."}
-              rows={1}
-              className="flex-1 bg-transparent text-base py-2 px-2 focus:outline-none max-h-24 resize-none text-slate-800 placeholder:text-slate-400"
-              style={{ minHeight: '36px' }}
-            />
-            
-            {inputValue.trim() ? (
-              <button
-                onClick={() => handleSendMessage()}
-                disabled={isTyping}
-                className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all shadow-sm bg-indigo-600 text-white hover:bg-indigo-700"
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            ) : (
-              <button
-                onClick={handleVoiceInput}
-                className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all shadow-sm duration-200 ${
-                  isListening ? 'bg-red-500 text-white scale-110 shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                }`}
-              >
-                {isListening ? <div className="w-3 h-3 bg-white rounded-sm animate-pulse" /> : <Mic className="w-4 h-4" />}
-              </button>
-            )}
+          <div className="flex items-end gap-2">
+            <div className={`flex-1 flex gap-2 items-end bg-white rounded-[24px] p-1.5 border shadow-[0_2px_15px_rgba(0,0,0,0.05)] transition-all duration-300 ${
+                isListening ? 'border-red-400 ring-4 ring-red-50 shadow-red-100' : 'border-slate-200'
+            }`}>
+                <button
+                onClick={handleAttachment}
+                className="w-9 h-9 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center flex-shrink-0 hover:bg-slate-100 hover:text-indigo-500 transition-colors"
+                >
+                <Plus className="w-5 h-5" />
+                </button>
+                
+                <textarea
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                    }
+                }}
+                placeholder={isListening ? "请说话..." : "发消息..."}
+                rows={1}
+                className="flex-1 bg-transparent text-base py-2 px-2 focus:outline-none max-h-24 resize-none text-slate-800 placeholder:text-slate-400"
+                style={{ minHeight: '36px' }}
+                />
+                
+                {inputValue.trim() ? (
+                <button
+                    onClick={() => handleSendMessage()}
+                    disabled={isTyping}
+                    className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all shadow-sm bg-indigo-600 text-white hover:bg-indigo-700"
+                >
+                    <Send className="w-4 h-4" />
+                </button>
+                ) : (
+                <button
+                    onClick={handleVoiceInput}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all shadow-sm duration-200 ${
+                    isListening ? 'bg-red-500 text-white scale-110 shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                    }`}
+                >
+                    {isListening ? <div className="w-3 h-3 bg-white rounded-sm animate-pulse" /> : <Mic className="w-4 h-4" />}
+                </button>
+                )}
+            </div>
           </div>
           <div className="text-center mt-1.5">
               <span className="text-[10px] text-slate-300">内容由 AI 生成，请仔细甄别</span>
@@ -458,7 +630,7 @@ const MobileHeader: React.FC<{ onAvatarClick: () => void }> = ({ onAvatarClick }
         
       case AppMode.RESUME: return { title: "简历定制", showBack: true, backTo: AppMode.DASHBOARD };
       case AppMode.RESUME_LIST: return { title: "我的简历", showBack: true, backTo: AppMode.DASHBOARD };
-      case AppMode.MATCH: return { title: "人岗匹配", showBack: true, backTo: AppMode.DASHBOARD };
+      case AppMode.MATCH: return { title: "人岗匹配", showBack: true, backTo: AppMode.DASHBOARD }; // Updated Title
       case AppMode.INTERVIEW: return { title: "面试模拟", showBack: true, backTo: AppMode.DASHBOARD };
       case AppMode.RADAR: return { title: "能力雷达", showBack: true, backTo: AppMode.DASHBOARD }; // Updated title
       case AppMode.ASSETS: return { title: "我的旅途", showBack: true, backTo: AppMode.DASHBOARD };

@@ -1,4 +1,5 @@
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
+import { StarExperience } from '../types';
 
 // Initialize the client
 const apiKey = process.env.API_KEY || '';
@@ -58,6 +59,53 @@ export const generateChatTitle = async (firstMessage: string): Promise<string> =
     return response.text?.trim() || "新对话";
   } catch (error) {
     return "新对话";
+  }
+};
+
+/**
+ * Analyzes a full chat history and extracts a structured STAR experience
+ */
+export const generateStarFromChat = async (messages: {role: string, text: string}[]): Promise<Partial<StarExperience>> => {
+  const conversationText = messages.map(m => `${m.role}: ${m.text}`).join('\n');
+  
+  const prompt = `
+    请分析以下对话记录，提取用户描述的核心经历，并将其整理为标准的 STAR 法则格式。
+    
+    对话记录:
+    ${conversationText}
+
+    要求：
+    1. 提取最核心的一个故事或项目。
+    2. 如果信息不完整，请根据上下文合理推断或概括。
+    3. 返回 JSON 格式。
+
+    JSON Schema:
+    {
+      "title": "简短的项目/经历标题 (10字内)",
+      "date": "推测的发生时间 (YYYY-MM)，如不清楚则用当前时间",
+      "situation": "背景 (S)",
+      "task": "任务 (T)",
+      "action": "行动 (A)",
+      "result": "结果 (R)",
+      "tags": ["技能标签1", "技能标签2", "技能标签3"]
+    }
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: models.flash,
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    const text = response.text || "{}";
+    const cleanJson = text.replace(/```json/g, '').replace(/```/g, '');
+    return JSON.parse(cleanJson);
+  } catch (error) {
+    console.error("Failed to generate STAR from chat", error);
+    throw new Error("Generation failed");
   }
 };
 

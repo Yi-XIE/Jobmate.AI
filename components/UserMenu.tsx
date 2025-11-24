@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import { LogOut, MessageSquare, X, Settings, ChevronRight } from 'lucide-react';
@@ -8,7 +9,7 @@ interface UserMenuProps {
 }
 
 const UserMenu: React.FC<UserMenuProps> = ({ isOpen, onClose }) => {
-  const { currentUser, chatHistory } = useApp();
+  const { currentUser, chatHistory, loadChatSession } = useApp();
 
   return (
     <>
@@ -48,20 +49,27 @@ const UserMenu: React.FC<UserMenuProps> = ({ isOpen, onClose }) => {
           <div>
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 px-1">历史对话</h3>
             <div className="space-y-1">
-              {chatHistory.map(chat => (
-                <button
-                  key={chat.id}
-                  onClick={() => { alert(`加载对话: ${chat.title}`); onClose(); }}
-                  className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-100 transition-colors text-left group"
-                >
-                   <MessageSquare className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
-                   <div className="flex-1 overflow-hidden">
-                     <div className="text-sm text-slate-700 font-medium truncate group-hover:text-indigo-700">{chat.title}</div>
-                     <div className="text-[10px] text-slate-400">{chat.date}</div>
-                   </div>
-                   <ChevronRight className="w-3 h-3 text-slate-300" />
-                </button>
-              ))}
+              {chatHistory.length === 0 ? (
+                <p className="text-xs text-slate-400 px-2">暂无历史记录</p>
+              ) : (
+                chatHistory.map(chat => (
+                  <button
+                    key={chat.id}
+                    onClick={() => { 
+                        loadChatSession(chat.id);
+                        onClose(); 
+                    }}
+                    className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-100 transition-colors text-left group"
+                  >
+                    <MessageSquare className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                    <div className="flex-1 overflow-hidden">
+                      <div className="text-sm text-slate-700 font-medium truncate group-hover:text-indigo-700">{chat.title}</div>
+                      <div className="text-[10px] text-slate-400">{chat.date}</div>
+                    </div>
+                    <ChevronRight className="w-3 h-3 text-slate-300" />
+                  </button>
+                ))
+              )}
             </div>
           </div>
 

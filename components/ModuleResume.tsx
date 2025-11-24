@@ -11,7 +11,9 @@ const SimpleMarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
   const parseInline = (text: string) => {
     // Handle bold: **text** or __text__
     // We split by the bold markers.
-    const parts = text.split(/(\*\*.*?\*\*|__.*?__)/g);
+    // Using a simpler regex that captures the bolded text including markers
+    const parts = text.split(/(\*\*.+?\*\*|__.+?__)/g);
+    
     return parts.map((part, index) => {
       if ((part.startsWith('**') && part.endsWith('**')) || (part.startsWith('__') && part.endsWith('__'))) {
         return <strong key={index} className="font-bold text-slate-900">{part.slice(2, -2)}</strong>;
@@ -43,8 +45,8 @@ const SimpleMarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
             return <h3 key={index} className="text-base font-bold text-slate-800 mt-4 mb-2">{parseInline(line.replace('### ', ''))}</h3>;
         }
         
-        // Bullet points
-        if (trimmed.startsWith('- ') || trimmed.startsWith('* ') || trimmed.startsWith('• ')) {
+        // Bullet points - more robust regex for spacing
+        if (/^[-*•]\s/.test(trimmed)) {
            const content = trimmed.replace(/^[-*•]\s+/, '');
            return (
              <div key={index} className="flex gap-2 text-slate-600 text-sm leading-relaxed ml-1 mb-1.5">
@@ -87,7 +89,8 @@ const SaveSuccessModal: React.FC<{ onClose: () => void, onView: () => void }> = 
         </div>
         <h3 className="text-lg font-extrabold text-slate-800 mb-2">保存成功</h3>
         <p className="text-xs text-slate-500 mb-6 leading-relaxed px-2">
-          您的简历已安全保存。<br/>您可以在“我的简历”中随时查看和导出。
+          您的简历已安全保存至云端。<br/>
+          请前往 <span className="font-bold text-slate-700">“我的简历”</span> 列表查看或管理。
         </p>
         <div className="flex flex-col w-full gap-3">
           <button 

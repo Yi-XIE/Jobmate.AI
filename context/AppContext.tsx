@@ -11,12 +11,14 @@ interface AppState {
   setResumeText: (text: string) => void;
   savedResumes: SavedResume[];
   loadResume: (id: string) => void;
-  saveCurrentResume: () => void; // Added
+  saveCurrentResume: () => void;
   // User & History
   currentUser: User;
   users: User[];
   switchUser: (userId: string) => void;
   chatHistory: ChatSession[];
+  saveChatSession: (messages: Message[], title: string) => void;
+  loadChatSession: (id: string) => void;
   // Global Chat State
   messages: Message[];
   setMessages: Dispatch<SetStateAction<Message[]>>;
@@ -143,11 +145,19 @@ const mockUsers: User[] = [
 ];
 
 const mockChatHistory: ChatSession[] = [
-  { id: 'c1', title: '挖掘校园音乐节经历', date: '今天 10:30' },
-  { id: 'c2', title: '优化自我介绍', date: '昨天' },
-  { id: 'c3', title: '面试技巧咨询：如何回答缺点', date: '3月12日' },
-  { id: 'c4', title: '周报生成：第10周', date: '3月5日' },
+  { id: 'c1', title: '挖掘校园音乐节经历', date: '2024-03-20 10:30' },
+  { id: 'c2', title: '优化自我介绍', date: '2024-03-19 14:00' },
+  { id: 'c3', title: '面试技巧咨询', date: '2024-03-12 09:00' },
 ];
+
+// Add messages to ChatSession type interface augmentation locally if needed, but in our case we might need to store messages in the session
+// For simplicity, we'll assume ChatSession in types.ts is just metadata, but let's extend it or use a separate store.
+// To keep it simple, we will store the actual messages in memory in this context for "mock" persistence.
+const mockChatMessagesStore: Record<string, Message[]> = {
+    'c1': [{id:'1', role:'model', text:'请问你在这个项目中担任什么角色？'}, {id:'2', role:'user', text:'我是总负责人。'}],
+    'c2': [{id:'1', role:'model', text:'你的自我介绍太长了，建议精简。'}],
+    'c3': [{id:'1', role:'model', text:'回答缺点时要真诚。'}]
+};
 
 const mockInterviewFeedbacks: InterviewFeedback[] = [
   {
@@ -181,12 +191,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // User State
   const [currentUser, setCurrentUser] = useState<User>(mockUsers[0]);
   const [users] = useState<User[]>(mockUsers);
-  const [chatHistory] = useState<ChatSession[]>(mockChatHistory);
+  const [chatHistory, setChatHistory] = useState<ChatSession[]>(mockChatHistory);
   const [interviewFeedbacks] = useState<InterviewFeedback[]>(mockInterviewFeedbacks);
   
   // Global Chat State
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentChatTitle, setCurrentChatTitle] = useState<string>("");
+
+  // Store messages for history sessions in memory
+  const [archivedMessages, setArchivedMessages] = useState<Record<string, Message[]>>(mockChatMessagesStore);
 
   const addExperience = (exp: StarExperience) => {
     setExperiences(prev => [exp, ...prev]);
@@ -220,6 +233,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (user) setCurrentUser(user);
   };
 
+  const saveChatSession = (msgs: Message[], title: string) => {
+      const sessionId = Date.now().toString();
+      const newSession: ChatSession = {
+          id: sessionId,
+          title: title || '未命名对话',
+          date: new Date().toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+      };
+      
+      setChatHistory(prev => [newSession, ...prev]);
+      setArchivedMessages(prev => ({ ...prev, [sessionId]: msgs }));
+  };
+
+  const loadChatSession = (id: string) => {
+      const msgs = archivedMessages[id];
+      const session = chatHistory.find(c => c.id === id);
+      if (msgs) {
+          setMessages(msgs);
+          setCurrentChatTitle(session?.title || "");
+          setMode(AppMode.DASHBOARD);
+      }
+  };
+
   return (
     <AppContext.Provider value={{ 
       currentMode, 
@@ -235,6 +270,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       users,
       switchUser,
       chatHistory,
+      saveChatSession,
+      loadChatSession,
       messages,
       setMessages,
       interviewFeedbacks,

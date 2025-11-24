@@ -18,10 +18,10 @@ const ModuleRadar: React.FC = () => {
   ];
 
   const skills = [
-    { name: 'Python / Data Analysis', level: 85, color: 'bg-blue-500' },
-    { name: 'Project Management', level: 70, color: 'bg-indigo-500' },
-    { name: 'Public Speaking', level: 60, color: 'bg-emerald-500' },
-    { name: 'UI/UX Design', level: 45, color: 'bg-orange-500' },
+    { name: 'Python / 数据分析', level: 85, color: 'bg-blue-500' },
+    { name: '项目管理', level: 70, color: 'bg-indigo-500' },
+    { name: '公众演讲', level: 60, color: 'bg-emerald-500' },
+    { name: 'UI/UX 设计', level: 45, color: 'bg-orange-500' },
   ];
 
   return (
@@ -95,21 +95,21 @@ const ModuleRadar: React.FC = () => {
               <span className="text-emerald-500 font-bold">•</span>
               <span>
                 <strong className="text-emerald-700 block mb-0.5">卓越的执行与落地能力</strong>
-                在“校园音乐节”和“市场自动化工具”项目中，你展现了从0到1解决问题的能力。不仅能应对突发的预算危机，还能主动通过技术手段优化工作流，这种“结果导向”的特质是雇主非常看重的。
+                在“校园音乐节”和“市场自动化工具”项目中，你展现了从0到1解决问题的能力。不仅能应对突发的预算危机，还能主动通过技术手段优化工作流，这种“结果导向”的特质是雇主非常看重的。相比同龄人，你更擅长在资源受限的情况下寻找替代方案。
               </span>
             </li>
             <li className="flex gap-2 text-xs text-slate-700 leading-relaxed">
               <span className="text-emerald-500 font-bold">•</span>
               <span>
-                <strong className="text-emerald-700 block mb-0.5">数据驱动的思维模式</strong>
-                你习惯用数据说话（如“提升15%转化”、“R2 Score 0.92”）。在数据科学项目中，你没有机械地套用模型，而是深入思考了业务场景（地理位置插值），这种将技术与业务结合的能力非常稀缺。
+                <strong className="text-emerald-700 block mb-0.5">数据驱动的复合思维模式</strong>
+                你习惯用数据说话（如“提升15%转化”、“R2 Score 0.92”）。在数据科学项目中，你没有机械地套用模型，而是深入思考了业务场景（地理位置插值），这种将技术与业务结合的能力非常稀缺。你不是单纯的技术执行者，而是具备商业敏感度的技术人才。
               </span>
             </li>
             <li className="flex gap-2 text-xs text-slate-700 leading-relaxed">
               <span className="text-emerald-500 font-bold">•</span>
               <span>
-                <strong className="text-emerald-700 block mb-0.5">跨界融合潜力</strong>
-                兼具计算机技术背景与活动组织经验，使你既能理解底层逻辑，又能处理人际协作，非常适合往“技术产品经理”或“项目经理”方向发展。
+                <strong className="text-emerald-700 block mb-0.5">跨界融合潜力 (T型人才)</strong>
+                兼具计算机技术背景与活动组织经验，使你既能理解底层逻辑，又能处理人际协作，非常适合往“技术产品经理”或“项目经理”方向发展。你的技能树显示出良好的广度和特定领域的深度。
               </span>
             </li>
           </ul>
@@ -127,9 +127,9 @@ const ModuleRadar: React.FC = () => {
                 <Zap className="w-4 h-4 text-slate-300" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-slate-700">强化领导力中的“决策细节”</h4>
+                <h4 className="text-xs font-bold text-slate-700">强化领导力中的“软性博弈”</h4>
                 <p className="text-[11px] text-slate-500 mt-1 leading-relaxed text-justify">
-                  虽然你有带队经验，但在描述中对于“如何处理团队冲突”或“如何做出艰难决策”的心理博弈过程描述较少。建议在面试中准备 1-2 个关于“说服他人”的具体案例，体现你的软性影响力。
+                  虽然你有带队经验，但在描述中对于“如何处理团队冲突”、“如何向上管理”或“如何做出艰难决策”的心理博弈过程描述较少。面试官通常会深挖这些细节来判断你的情商和成熟度。建议整理 1-2 个关于“说服他人”的具体 STAR 案例。
                 </p>
               </div>
             </div>
@@ -138,9 +138,9 @@ const ModuleRadar: React.FC = () => {
                 <BookOpen className="w-4 h-4 text-slate-300" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-slate-700">补充宏观商业视角</h4>
+                <h4 className="text-xs font-bold text-slate-700">补充宏观商业视角 (Business Sense)</h4>
                 <p className="text-[11px] text-slate-500 mt-1 leading-relaxed text-justify">
-                  你的经历多集中在具体的执行层面。为了进阶，建议尝试思考项目背后的商业价值（如 ROI 分析、市场竞品分析）。例如，在介绍自动化工具时，除了提效率提升，还可以预估其节省的人力成本金额。
+                  你的经历目前多集中在具体的执行层面 (How)。为了进阶，建议尝试思考项目背后的商业价值 (Why)。例如，在介绍自动化工具时，除了提效率提升，还可以尝试预估其节省的人力成本金额，或者对公司战略的影响。这会让你在产品经理面试中脱颖而出。
                 </p>
               </div>
             </div>
@@ -154,7 +154,7 @@ const ModuleRadar: React.FC = () => {
                   <span className="p-1 bg-indigo-200 rounded-full group-hover:bg-white transition-colors">
                      <Video className="w-3.5 h-3.5 fill-current" />
                   </span>
-                  针对性面试培训 (Video Practice)
+                  针对性面试培训 (进入练习模式)
                 </button>
             </div>
           </div>
